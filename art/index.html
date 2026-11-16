@@ -56,10 +56,10 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
 <nav aria-label="分类"><div class="wrap" id="nav"></div></nav>
 <div class="wrap">
   <header>
-    <div class="k">ART KIT · 像素美术套件 · v3</div>
+    <div class="k">ART KIT · 像素美术套件 · v4</div>
     <h1>零度圣歌 · 美术套件</h1>
     <p>游戏里用到的美术元素：角色立绘、图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。角色立绘使用已获许可的原设像素化版本。</p>
-    <p>v3 参照《死亡细胞》公开的美术方法：饱和的中间调、室内用补色、室外用邻近色、暖光对冷影、敌人带冷色背光轮廓、硬边色阶不加抖动，背景做调色与泛光。全部元素仍为本作原创。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
+    <p>v3 参照《死亡细胞》公开的美术方法：饱和的中间调、室内用补色、室外用邻近色、暖光对冷影、敌人带冷色背光轮廓、硬边色阶不加抖动，背景做调色与泛光。v4 由独立的美术指导评审后重做全部敌人与机甲：圣会、失控体、网络虫群三个阵营各有形状和配色规则，每个敌人只有一个发光弱点；新增四张带平台和角色的关卡画面，角色按场景光源重新打光。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
     <div class="hero" id="hero"></div>
   </header>
   <div id="main"></div>
@@ -73,13 +73,14 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
       <div class="note"><b>版权</b><p>除角色立绘（原设 ZipZipPipe，已获许可）外，全部为本作原创，不使用公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
     </div>
   </section>
-  <footer>《零度圣歌》美术套件 v3 · 2026-11-17。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
+  <footer>《零度圣歌》美术套件 v4 · 2026-11-17。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
 </div>
 <dialog id="dlg"><button id="close" type="button">关闭</button><canvas id="zoom"></canvas><p id="zcap"></p></dialog>
+<script src="chars60.js"></script>
 <script src="kit.js"></script>
 <script>
 const {A,R}=KIT;
-const CATS=[["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["mock","游戏画面样机","320×180",250,"340px"]];
+const CATS=[["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["level","关卡画面","320×180 · 含平台与角色",250,"340px"],["mock","游戏画面样机","320×180",250,"340px"]];
 const CHARS=[["claude","克劳德"],["deepseek","深海 · 大肥鱼"],["gpt","白龙"],["gemini","双子"],["glm","智狐"],["kimi","月见"],["qwen","千问"],["grok","格洛克"],["wenxin","文墨"],["doubao","团子"]];
 document.getElementById("nav").innerHTML=`<a href="#char">角色立绘</a>`+CATS.map(c=>`<a href="#${c[0]}">${c[1]}</a>`).join("")+`<a href="#palette">调色板</a><a href="#rules">规范</a>`;
 

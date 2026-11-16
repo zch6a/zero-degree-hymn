@@ -206,122 +206,131 @@
   def("vfx", "echo", "回声光点", () => [0, 1, 2, 3].map(k => { const g = new G(14, 18), r = rng(3 + k);
     for (let i = 0; i < 7; i++) { const x = 2 + r() * 10 | 0, y = 17 - ((i * 3 + k * 4) % 18); g.set(x, y, i % 2 ? R.purple[4] : R.gold[4]); if (i % 3 === 0) { g.set(x + 1, y, R.purple[2]); g.set(x - 1, y, R.purple[2]); g.set(x, y - 1, R.purple[2]); g.set(x, y + 1, R.purple[2]); } } return g; }));
 
-  /* ---------- 4. enemies (face left) ---------- */
-  RIMC = "#62d6ff"; // cold backlight on threats
-  def("enemy", "crawler", "爬虫无人机", () => [0, 1].map(k => { const g = new G(38, 24);
-    const legs = (front) => { for (let i = 0; i < 3; i++) { const hx = 13 + i * 7, s = ((i + k) % 2 ? 1 : -1) * (front ? 1 : -1); const kx = hx - 3, ky = 8, fx = hx - 6 + s, fy = 22; line(g, hx, 12, kx, ky, front ? R.iron[3] : R.iron[1], 2); line(g, kx, ky, fx, fy, front ? R.iron[2] : R.iron[1]); g.set(fx - 1, fy, front ? R.iron[3] : R.iron[1]); } };
+  /* ---------- 4. enemies v4 · faction design language (art-direction spec) ---------- */
+  // rim light by faction: Synod gold, Rogue pink, Net cyan · one glowing weak point each · limbs ≥3px
+  const RIM = { synod: "#ffd27a", rogue: "#ff7ab8", net: "#62e6ff" };
+  const fin = (g, rimc, glows = []) => { const o = outline(g); rim(o, rimc, "right", .45); glows.forEach(([x, y, r, c, k]) => glow(o, x + 1, y + 1, r, c, k)); return o; };
+
+  RIMC = RIM.net;
+  def("enemy", "datatick", "数据蜱（原爬虫无人机）", () => [0, 1, 2].map(k => { const g = new G(32, 20), pounce = k === 2, dy = k === 1 ? 1 : 0;
+    const legs = front => [[10, 14], [16, 15], [23, 14]].forEach(([x, y], i) => { const s = ((i + k) % 2 ? 1 : -1); const kx = x - 2, ky = y - 2 + dy, fx = pounce ? x + 4 : x - 3 + s * (front ? 1 : -1), fy = pounce ? 17 : 19; line(g, x, y + dy, kx, ky, front ? R.iron[3] : R.iron[1], 2); line(g, kx, ky, fx, fy, front ? R.iron[2] : R.iron[1], 2); });
     legs(false);
-    S(g, 38, 24, m => mpoly(m, [[12, 7], [22, 4], [32, 5], [37, 10], [33, 15], [14, 16]], 2), R.iron, { base: 2, bev: 3, k: 1.7 });
-    for (const x of [19, 25, 31]) groove(g, x, 5, x - 1, 15, R.iron);
-    S(g, 38, 24, m => mpoly(m, [[3, 9], [10, 5], [15, 8], [14, 15], [5, 15]], 2), R.steel, { base: 2.1, bev: 2 });
-    pts(g, [[2, 14], [1, 15], [3, 15], [4, 16]], R.iron[3]); S(g, 38, 24, m => mblob(m, 6.5, 10, 2.2, 2.2), R.red, { base: 3, bev: 2 }); g.set(6, 9, "#ffffff");
-    for (const x of [21, 27]) { box(g, x, 1, 3, 3, R.cyan, { base: 2.2 }); } line(g, 11, 5, 8, 0, R.iron[2]); g.set(8, 0, k ? R.red[4] : R.red[2]); line(g, 36, 11, 37, 17, R.ink[3]);
-    legs(true); const o = outline(g); glow(o, 7, 11, 7, R.red[3], .45); glow(o, 23, 3, 5, R.cyan[3], .25); return o; }), "两帧爬行 · 背着两块偷来的数据");
-  def("enemy", "spam", "水军机", () => [0, 1].map(k => { const g = new G(30, 30);
-    line(g, 5, 5, 25, 5, R.iron[2]); line(g, 15, 5, 15, 10, R.iron[2]); for (const cx of [5, 25]) { const w = k ? 6 : 3; line(g, cx - w, 3 + (k ? 1 : 0), cx + w, 3 + (k ? 0 : 1), R.iron[4]); g.set(cx, 4, R.iron[3]); }
-    S(g, 30, 30, m => mpoly(m, [[9, 10], [21, 10], [26, 17], [20, 27], [12, 27], [7, 18]], 2), R.pink, { base: 2, bev: 4, k: 1.7 });
-    S(g, 30, 30, m => mpoly(m, [[1, 12], [9, 15], [9, 21], [1, 24]], 1), R.iron, { base: 2.2, bev: 2 }); S(g, 30, 30, m => mblob(m, 3, 18, 1.5, 4), R.ink, { base: 1.4 });
-    for (let x = 11; x < 23; x++) g.set(x, 19, ((x + k * 2) % 3) ? R.ink[1] : R.pink[4]); S(g, 30, 30, m => mblob(m, 21, 14, 2, 2), R.gold, { base: 3 }); g.set(21, 13, R.ink[1]); g.set(21, 15, R.ink[1]);
-    pts(g, [[14, 28], [16, 29], [18, 28]], R.iron[2]); const o = outline(g); glow(o, 4, 18, 8, R.pink[3], .35); return o; }), "两帧旋翼 · 屏幕在刷字");
-  def("enemy", "adturret", "广告炮台", () => { const g = new G(38, 40);
-    line(g, 19, 30, 6, 39, R.iron[2], 2); line(g, 19, 30, 32, 39, R.iron[1], 2); line(g, 19, 30, 19, 39, R.iron[3], 2);
-    S(g, 38, 40, m => mblob(m, 19, 30, 8, 3, 3), R.iron, { base: 2 }); S(g, 38, 40, m => mpoly(m, [[17, 20], [21, 20], [22, 29], [16, 29]], 0), R.steel, { base: 2 });
-    S(g, 38, 40, m => mblob(m, 19, 12, 15, 10, 4), R.steel, { base: 2, bev: 3 }); S(g, 38, 40, m => mblob(m, 19, 12, 11.5, 7, 4), R.pink, { base: 1.6, bev: 4, k: -1 });
-    const bag = ["..xxx..", ".x...x.", "xxxxxxx", "xxxxxxx", "xx.x.xx", "xxxxxxx"]; bag.forEach((r, y) => [...r].forEach((c, x) => { if (c === "x") g.set(11 + x, 9 + y, y === 0 || y === 1 ? R.gold[3] : R.gold[4]); }));
-    for (const [x, y] of [[23, 9], [25, 9], [22, 10], [26, 10], [23, 12], [25, 12], [24, 13]]) g.set(x, y, R.red[3]); for (let x = 23; x < 26; x++) g.set(x, 10, R.red[4]), g.set(x, 11, R.red[3]);
-    line(g, 9, 3, 6, 0, R.iron[3]); line(g, 29, 3, 32, 0, R.iron[3]); g.set(6, 0, R.pink[4]); g.set(32, 0, R.pink[4]);
-    S(g, 38, 40, m => mpoly(m, [[1, 22], [16, 21], [16, 25], [1, 25]], 0), R.iron, { base: 2.2, bev: 1 }); S(g, 38, 40, m => mblob(m, 2, 23.5, 2, 2.4, 4), R.ink, { base: 2 });
-    const o = outline(g); glow(o, 20, 12, 15, R.pink[3], .3); return o; }, "屏幕上永远在打折");
-  def("enemy", "muteguard", "缄口卫兵", () => [0, 1].map(k => { const g = new G(36, 58), s = k ? 1 : 0;
-    S(g, 36, 58, m => mpoly(m, [[18, 17], [29, 19], [33, 50], [28, 55], [22, 51], [17, 56], [13, 30]], 2), R.red, { base: 1.4, bev: 3 });
-    S(g, 36, 58, m => { mpoly(m, [[12, 38], [17, 38], [16 - s, 52], [11 - s, 52]], 1); mpoly(m, [[7 - s, 51], [17 - s, 51], [17 - s, 55], [6 - s, 55]], 1); }, R.iron, { base: 1.6, bev: 2 });
-    S(g, 36, 58, m => { mpoly(m, [[19, 38], [24, 38], [25 + s, 52], [20 + s, 52]], 1); mpoly(m, [[17 + s, 51], [27 + s, 51], [27 + s, 55], [16 + s, 55]], 1); }, R.iron, { base: 2.2, bev: 2 });
-    S(g, 36, 58, m => mpoly(m, [[10, 24], [26, 24], [28, 46], [18, 50], [8, 46]], 1), R.ink, { base: 2.2, bev: 2, fn: (x, y, v, d) => d <= 1.5 ? R.gold[d <= 1 ? 3 : 1] : v });
-    S(g, 36, 58, m => mpoly(m, [[9, 16], [27, 16], [26, 27], [10, 27]], 2), R.iron, { base: 2.2, bev: 3 });
-    for (let a = 0; a < 12; a++) { const t = a * Math.PI / 6, l = a % 2 ? 3 : 4.5; line(g, 18, 36, 18 + Math.cos(t) * l, 36 + Math.sin(t) * l, R.gold[a % 2 ? 2 : 3]); } S(g, 36, 58, m => mblob(m, 18, 36, 2, 2), R.gold, { base: 3.4 });
-    for (let a = 0; a < 10; a++) { const t = a * Math.PI / 5; g.set(18 + Math.cos(t) * 5.6, 36 + Math.sin(t) * 5.6, R.iron[3]); }
-    S(g, 36, 58, m => { mblob(m, 27, 18, 5, 4); }, R.iron, { base: 1.8, bev: 3 }); S(g, 36, 58, m => { mblob(m, 9, 18, 5.5, 4.2); mblob(m, 8, 21.5, 5, 2.6); }, R.iron, { base: 2.6, bev: 3 }); groove(g, 4, 21, 13, 21, R.iron);
-    S(g, 36, 58, m => mpoly(m, [[11, 4], [22, 4], [24, 11], [22, 16], [12, 16], [10, 11]], 2), R.iron, { base: 2.3, bev: 3 }); S(g, 36, 58, m => mpoly(m, [[13, 0], [20, 0], [23, 5], [13, 5]], 2), R.gold, { base: 2.4, bev: 2 });
-    for (let x = 11; x < 19; x++) g.set(x, 9, R.ink[1]); g.set(12, 9, R.cyan[4]); g.set(16, 9, R.cyan[4]); for (let x = 11; x < 19; x += 2) { g.set(x, 13, R.gold[3]); g.set(x + 1, 12, R.gold[2]); g.set(x + 1, 14, R.gold[2]); }
-    line(g, 5, 2, 5, 57, R.wood[2]); line(g, 6, 2, 6, 57, R.wood[1]); S(g, 36, 58, m => mpoly(m, [[5, 3], [0, 6], [-1, 12], [2, 15], [5, 11]], 2), R.iron, { base: 2.6, bev: 2 }); pts(g, [[5, 0], [6, 0], [5, 1]], R.iron[4]);
-    S(g, 36, 58, m => mblob(m, 5, 14, 2.4, 1, 4), R.gold, { base: 2.6 }); S(g, 36, 58, m => mblob(m, 6.5, 30, 3, 2.8), R.iron, { base: 2.8 });
-    const o = outline(g); rim(o, R.gold[3], "right", .35); glow(o, 15, 10, 5, R.cyan[3], .35); return o; }), "两帧行走 · 封口面具 · 链锁日轮");
-  def("enemy", "chantdrone", "诵经无人机", () => [0, 1].map(k => { const g = new G(32, 36), r = rng(7 + k);
-    line(g, 16, 0, 9, 9, R.gold[2]); line(g, 16, 0, 23, 9, R.gold[1]);
-    S(g, 32, 36, m => mpoly(m, [[8, 9], [16, 2], [24, 9]], 1), R.gold, { base: 2.4, bev: 2 });
-    S(g, 32, 36, m => mpoly(m, [[7, 9], [25, 9], [26, 21], [16, 29], [6, 21]], 2), R.marble, { base: 2.2, bev: 3 });
-    for (const cx of [11, 16, 21]) { for (let y = 13; y < 21; y++) for (let x = cx - 1; x <= cx + 1; x++) if (y > 14 || x === cx) g.set(x, y, pick(R.gold, 4 - (y - 13) * .3, x, y)); }
-    for (let a = 0; a < 26; a++) { const t = a / 26 * Math.PI * 2 + k * .12; const x = 16 + Math.cos(t) * 14, y = 15 + Math.sin(t) * 3.4; if (Math.sin(t) > 0 || !g.get(x, y)) g.set(x, y, a % 3 ? R.gold[3] : R.gold[1]); }
-    line(g, 16, 29, 16, 35, R.gold[2]); pts(g, [[15, 34], [17, 34], [16, 35]], R.gold[3]); for (let i = 0; i < 4; i++) g.set(14 + r() * 4, 0 - i * 0 + (k ? 1 : 2) + i, R.marble[3]);
-    const o = outline(g); glow(o, 17, 17, 12, R.gold[3], .35); return o; }), "两帧光环转动 · 吊着香炉");
-  def("enemy", "deepfake", "深伪潜伏者", () => { const g = new G(36, 48), r = rng(5);
-    S(g, 36, 48, m => mpoly(m, [[7, 27], [29, 27], [34, 46], [27, 42], [22, 48], [16, 43], [10, 48], [2, 44]], 2), R.purple, { base: 1.4, bev: 3 });
-    S(g, 36, 48, m => mpoly(m, [[10, 6], [18, 0], [27, 6], [30, 20], [27, 31], [9, 31], [6, 20]], 2), R.purple, { base: 1.8, bev: 3 });
-    S(g, 36, 48, m => mblob(m, 18, 16, 6.5, 8), R.ink, { base: 1, bev: 2 }); S(g, 36, 48, m => mblob(m, 18, 16, 5, 6.5), R.blue, { base: 2.4, bev: 3, k: 2 });
-    line(g, 15, 12, 21, 20, R.cyan[4]); pts(g, [[16, 12], [17, 12]], "#ffffff"); line(g, 13, 13, 16, 15, R.ink[2]);
-    S(g, 36, 48, m => { mpoly(m, [[4, 30], [9, 29], [6, 36], [2, 37]], 1); }, R.marble, { base: 1.6 });
-    const o = outline(g); for (let y = 0; y < o.h; y++) if (r() < .13) { const sh = r() < .5 ? 2 : -2, row = []; for (let x = 0; x < o.w; x++) row.push(o.get(x, y)); for (let x = 0; x < o.w; x++) { o.d[y * o.w + x] = null; const c = row[x - sh]; if (c) o.set(x, y, mix(c, R.cyan[3], .35)); } }
-    return o; }, "镜面面具会映出玩家");
-  def("enemy", "rogue", "失控体 · 战争机械", () => [0, 1].map(k => { const g = new G(58, 56);
-    const leg = (hx, ramp, s, b) => S(g, 58, 56, m => { mline(m, hx, 32, hx + 6, 41 + s, 5); mline(m, hx + 6, 41 + s, hx + 1, 49, 4); mpoly(m, [[hx - 5, 49], [hx + 6, 49], [hx + 7, 54], [hx - 6, 54]], 1); }, ramp, { base: b, bev: 2 });
-    leg(33, R.rust, k ? 1 : 0, 1.4);
-    S(g, 58, 56, m => mpoly(m, [[14, 18], [28, 9], [44, 11], [50, 21], [44, 34], [20, 35], [12, 28]], 2), R.rust, { base: 2.1, bev: 4, k: 1.7 });
-    groove(g, 22, 13, 24, 33, R.rust); groove(g, 36, 11, 38, 34, R.rust); for (const [x, y] of [[18, 20], [30, 14], [42, 16], [26, 30], [40, 30]]) rivet(g, x, y, R.rust);
-    for (let x = 16; x < 44; x++) if (g.get(x, 33) && (x >> 1) % 2) g.set(x, 33, R.gold[3]);
-    S(g, 58, 56, m => mblob(m, 32, 22, 4.5, 4.5), R.ink, { base: 1 }); S(g, 58, 56, m => mblob(m, 32, 22, 3, 3), R.pink, { base: 3, bev: 3 }); g.set(31, 21, "#ffffff");
-    S(g, 58, 56, m => mpoly(m, [[5, 15], [15, 11], [20, 17], [17, 24], [6, 23]], 2), R.iron, { base: 2.2, bev: 2 }); for (let x = 6; x < 15; x++) g.set(x, 17, pick(R.red, x === 8 ? 4 : 2.6, x, 17));
-    S(g, 58, 56, m => { mline(m, 30, 9, 12, 5, 4); mblob(m, 11, 5, 3, 3, 4); }, R.iron, { base: 2, bev: 2 }); groove(g, 16, 5, 26, 7, R.iron);
-    S(g, 58, 56, m => { mline(m, 17, 28, 9, 35, 4); mpoly(m, [[4, 34], [10, 32], [12, 39], [8, 42]], 1); }, R.iron, { base: 2.4, bev: 2 }); pts(g, [[4, 40], [3, 41], [6, 43]], R.iron[3]);
-    line(g, 46, 30, 48, 38, R.ink[3]); line(g, 47, 30, 50, 36, R.cyan[2]); leg(23, R.rust, k ? 0 : 1, 2.3);
-    const o = outline(g); glow(o, 9, 18, 8, R.red[3], .45); glow(o, 33, 23, 7, R.pink[3], .55); rim(o, R.orange[3], "right", .3); return o; }), "两帧行走 · 胸口的粉色光是被焊进去的言灵残片");
-  def("enemy", "colossus", "过拟合巨像", () => { const g = new G(76, 76);
-    S(g, 76, 76, m => { mpoly(m, [[20, 52], [32, 52], [30, 74], [16, 74]], 1); mpoly(m, [[44, 52], [56, 52], [60, 74], [46, 74]], 1); }, R.stone, { base: 1.8, bev: 3 });
-    S(g, 76, 76, m => mpoly(m, [[10, 20], [66, 20], [58, 50], [38, 56], [18, 50]], 2), R.stone, { base: 2.1, bev: 5, k: 1.6 });
-    for (let i = 0; i < 4; i++) { const y = 27 + i * 5; for (let x = 26; x < 50; x++) if (g.get(x, y)) g.set(x, y, (x + i * 3) % 4 ? R.cyan[2] : R.cyan[4]); }
-    line(g, 18, 26, 24, 44, R.ink[1]); line(g, 24, 44, 22, 50, R.ink[1]); pts(g, [[19, 30], [20, 36], [23, 45]], R.moss[3]);
-    for (const sx of [-1, 1]) { const cx = 38 + sx * 30; S(g, 76, 76, m => { mblob(m, cx, 24, 10, 8, 2.4); mline(m, cx, 28, cx - sx * 2, 52, 8); mblob(m, cx - sx * 2, 56, 7, 6, 2.6); }, R.iron, { base: sx < 0 ? 2.4 : 1.8, bev: 3 }); groove(g, cx - 8, 26, cx + 8, 26, R.iron); }
-    S(g, 76, 76, m => mpoly(m, [[24, 6], [28, 0], [32, 5], [38, -1], [44, 5], [48, 0], [52, 6], [52, 20], [24, 20]], 1), R.iron, { base: 2.4, bev: 3 });
-    for (let x = 26; x < 51; x++) { g.set(x, 12, R.ink[1]); g.set(x, 13, pick(R.red, 2 + (Math.abs(x - 38) < 4 ? 2 : 0), x, 13)); g.set(x, 14, R.ink[1]); }
-    const o = outline(g); glow(o, 39, 13, 16, R.red[3], .45); glow(o, 38, 34, 14, R.cyan[3], .2); return o; }, "胸口的光条在记忆你的打法");
-  def("enemy", "surgeon", "Boss · 手术机械", () => { const g = new G(84, 66);
-    for (const [hx, fx] of [[26, 10], [34, 24], [50, 60], [58, 76]]) { line(g, hx, 44, (hx + fx) / 2, 36, R.iron[2], 3); line(g, (hx + fx) / 2, 36, fx, 64, R.iron[1], 2); S(g, 84, 66, m => mblob(m, (hx + fx) / 2, 36, 2.4, 2.4), R.iron, { base: 2.6 }); }
-    S(g, 84, 66, m => mblob(m, 42, 38, 24, 13, 3), R.marble, { base: 2.4, bev: 4, k: 1.7 }); S(g, 84, 66, m => mblob(m, 42, 40, 13, 5, 4), R.ink, { base: 1.2, bev: 2 });
-    for (let x = 30; x < 55; x++) { const y = 40 + (x % 12 === 4 ? -4 : x % 12 === 5 ? 3 : x % 12 === 6 ? -1 : 0); g.set(x, y, R.green[3]); }
-    S(g, 84, 66, m => mblob(m, 42, 22, 12, 10), R.cyan, { base: 1.4, bev: 5, k: 2 }); S(g, 84, 66, m => mblob(m, 42, 24, 4, 3), R.red, { base: 2.6 }); pts(g, [[36, 16], [37, 15], [38, 15]], "#ffffff");
-    for (let a = 0; a < 20; a++) { const t = Math.PI + a / 19 * Math.PI; g.set(42 + Math.cos(t) * 15, 13 + Math.sin(t) * 3, R.rice[4]); }
-    line(g, 20, 32, 8, 20, R.iron[2], 2); line(g, 8, 20, 4, 30, R.iron[2], 2); S(g, 84, 66, m => mpoly(m, [[2, 30], [6, 30], [4, 42]], 0), R.rice, { base: 3.6 });
-    line(g, 64, 32, 76, 18, R.iron[2], 2); S(g, 84, 66, m => mpoly(m, [[74, 4], [79, 4], [79, 18], [74, 18]], 0), R.marble, { base: 2.6, bev: 1 }); for (let y = 8; y < 17; y++) { g.set(75, y, R.green[3]); g.set(76, y, R.green[2]); } line(g, 76, 0, 76, 4, R.iron[4]);
-    line(g, 24, 44, 14, 50, R.iron[2], 2); pts(g, [[12, 49], [11, 51], [13, 52], [14, 53]], R.iron[4]);
-    const o = outline(g); glow(o, 42, 24, 10, R.red[3], .4); glow(o, 42, 40, 14, R.green[3], .25); glow(o, 42, 13, 14, R.rice[4], .2); return o; }, "“请保持静止，正在为您治疗。”");
+    S(g, 32, 20, m => pounce ? mblob(m, 15, 11, 12, 4) : mblob(m, 17, 10 + dy, 10, 5), R.ink, { base: 2.2, bev: 3, k: 1.8 });
+    for (let x = 12; x < 16; x++) if (g.get(x, 6 + dy)) g.set(x, 6 + dy, R.marble[3]);
+    for (let x = 11; x < 23; x++) if (g.get(x, 10 + dy)) g.set(x, 10 + dy, x > 14 && x < 19 ? R.cyan[4] : R.cyan[2]);
+    S(g, 32, 20, m => { mpoly(m, [[1, 12], [5, 12], [5, 14], [1, 13]], 0); mpoly(m, [[1, 15], [5, 14], [5, 16], [1, 16]], 0); }, R.steel, { base: 2.4, bev: 1 });
+    S(g, 32, 20, m => mblob(m, 6, 10 + dy, 3, 3), R.cyan, { base: pounce ? 4 : 3, bev: 2 }); g.set(5, 9 + dy, "#ffffff");
+    S(g, 32, 20, m => mpoly(m, [[18, 1 + dy], [24, 1 + dy], [24, 7 + dy], [18, 7 + dy]], 0), R.green, { base: 2.6, bev: 2 }); g.set(19, 2 + dy, R.green[4]);
+    legs(true); return fin(g, RIM.net, [[6, 10 + dy, 7, R.cyan[3], .5], [21, 4 + dy, 6, R.green[3], .35]]); }), "爬行两帧 + 扑咬 · 背上的绿色方块是掉落物");
+  def("enemy", "horn", "群发喇叭（原水军机）", () => [0, 1, 2].map(k => { const g = new G(30, 26), dy = k === 1 ? -1 : 0, fire = k === 2;
+    line(g, 24, 2 + dy, 24, 10 + dy, R.iron[3], 2);
+    S(g, 30, 26, m => mpoly(m, [[8, 8 + dy], [24, 11 + dy], [25, 13 + dy], [24, 15 + dy], [8, 18 + dy]], 1), R.ink, { base: 2.4, bev: 2, k: 1.6 }); for (const x of [13, 18]) groove(g, x, 9 + dy, x, 17 + dy, R.purple);
+    S(g, 30, 26, m => mblob(m, 4.5, 13 + dy, fire ? 5 : 4.2, fire ? 8 : 7), R.pink, { base: 2.6, bev: 3, k: 1.8 }); S(g, 30, 26, m => mblob(m, 3.5, 13 + dy, 2.4, 4.8), R.ink, { base: 1.2, bev: 1 });
+    for (const r2 of [1.4, 3]) for (let a = 0; a < 24; a++) { const t = a / 24 * Math.PI * 2, x = 3.5 + Math.cos(t) * r2 * .5, y = 13 + dy + Math.sin(t) * r2; if (g.get(x, y)) g.set(x, y, fire ? "#ffffff" : R.pink[3]); }
+    for (const x of [14, 18]) { S(g, 30, 26, m => mpoly(m, [[x, 19 + dy], [x + 4, 19 + dy], [x + 4, 22 + dy], [x, 22 + dy]], 0), R.iron, { base: 2 }); g.set(x + 1, 23 + dy, R.cyan[k ? 4 : 3]); g.set(x + 2, 24 + dy, R.cyan[2]); }
+    S(g, 30, 26, m => mblob(m, 25.5, 3.5 + dy, 3, 3), R.red, { base: k === 0 ? 3 : 3.8, bev: 2 }); g.set(24, 2 + dy, "#ffffff");
+    return fin(g, RIM.net, [[25, 3 + dy, 6, R.red[3], .55], [4, 13, fire ? 12 : 6, R.pink[3], .4]]); }), "悬浮两帧 + 开火 · 天线上的红点是弱点");
+  def("enemy", "recoeye", "推荐之眼（原广告炮台）", () => [0, 1].map(k => { const g = new G(36, 48);
+    S(g, 36, 48, m => mpoly(m, [[6, 42], [30, 42], [33, 47], [28, 47], [18, 44], [8, 47], [3, 47]], 0), R.iron, { base: 2, bev: 2 });
+    S(g, 36, 48, m => mpoly(m, [[16, 23], [20, 23], [20, 42], [16, 42]], 0), R.ink, { base: 2, bev: 1 }); for (let y = 27; y < 41; y += 4) g.set(17, y, R.cyan[2]);
+    S(g, 36, 48, m => mpoly(m, [[2, 17], [18, 9], [34, 17], [18, 25]], 2), R.steel, { base: 2.4, bev: 2, k: 1.6 });
+    const im = new M(36, 48); mpoly(im, [[5, 17], [18, 11.5], [31, 17], [18, 22.5]], 2); fillCol(g, im, (x, y) => pick(y < 17 ? R.pink : R.cyan, 2.2 + (y < 17 ? (17 - y) * .2 : (y - 17) * -.15) + Math.sin(x * .8 + k * 2) * .3, x, y));
+    const px = k ? 14 : 22; S(g, 36, 48, m => mblob(m, px, 17, 4, 4), R.gold, { base: 3.2, bev: 2 }); S(g, 36, 48, m => mblob(m, px, 17, 1.6, 1.6), R.ink, { base: .6 }); g.set(px - 1, 15, "#ffffff");
+    for (const [rr, c] of [[4, R.cyan[3]], [6.5, R.cyan[k ? 4 : 2]]]) for (let a = -55; a <= 55; a += 8) { const t = (a - 90) * Math.PI / 180; g.set(18 + Math.cos(t) * rr, 6 + Math.sin(t) * rr * .6, c); }
+    return fin(g, RIM.net, [[px, 17, 8, R.gold[3], .4], [18, 17, 16, k ? R.cyan[3] : R.pink[3], .25]]); }), "瞳孔追踪玩家 · 信号塔不倒，信号环一直亮");
+  def("enemy", "paintskin", "画皮（原深伪潜伏者）", () => [0, 1].map(k => { const g = new G(34, 48);
+    const wr = new M(34, 48); mline(wr, 29, 10, 31, 46, 4); sculpt(g, wr, R.ink, { base: 1.8, bev: 2 });
+    S(g, 34, 48, m => mpoly(m, [[2, 4], [24, 4], [24, 34], [2, 34]], 0), k ? R.ink : R.rice, { base: k ? 1.2 : 2.4, bev: 1, k: .6 });
+    if (!k) { for (let i = 2; i <= 24; i++) { g.set(i, 4, "#ffffff"); g.set(i, 34, "#ffffff"); } for (let j = 4; j <= 34; j++) { g.set(2, j, "#ffffff"); g.set(24, j, "#ffffff"); }
+      S(g, 34, 48, m => { mblob(m, 13, 13, 4.4, 4.4); mpoly(m, [[7, 30], [9, 19], [17, 19], [19, 30]], 1); }, R.pink, { base: 2.6, bev: 2, k: .8 }); for (const [x, y] of [[11, 12], [15, 12]]) g.set(x, y, R.ink[1]); for (let x = 11; x <= 15; x++) g.set(x, 15 - (x === 11 || x === 15 ? 1 : 0), R.ink[1]);
+      S(g, 34, 48, m => mpoly(m, [[6, 24], [10, 22], [10, 28], [6, 28]], 0), R.red, { base: 2.8 }); }
+    else { S(g, 34, 48, m => mpoly(m, [[2, 4], [11, 4], [13, 10], [10, 16], [13, 22], [10, 28], [12, 34], [2, 34]], 0), R.rice, { base: 2, bev: 1, k: .5 }); S(g, 34, 48, m => mpoly(m, [[16, 4], [24, 4], [24, 34], [17, 34], [19, 28], [16, 22], [19, 16], [16, 10]], 0), R.rice, { base: 1.6, bev: 1, k: .5 });
+      for (const x of [13, 17]) S(g, 34, 48, m => mblob(m, x, 14, 1.6, 2.2), R.red, { base: 3.8 }); for (let x = 12; x < 19; x += 2) { g.set(x, 21, "#ffffff"); g.set(x, 22, "#ffffff"); g.set(x + 1, 22, R.ink[1]); } }
+    for (const fx of [6, 12, 18, 24]) { line(g, fx, 2, fx + 1, 6, R.purple[2], 2); g.set(fx, 1, R.purple[3]); } line(g, 24, 3, 29, 10, R.ink[3], 2);
+    const o = fin(g, RIM.net, k ? [[12, 14, 10, R.red[3], .5]] : []); if (k) { const src = o.clone(); for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) { const c = src.get(x, y); if (c && (y % 5 === 0)) { o.set(x + 1, y, mix(c, R.pink[3], .5)); o.set(x - 1, y, mix(c, R.cyan[3], .5)); } } } return o; }), "伪装态（笑脸立牌）/ 揭穿态");
 
-  /* ---------- 5. mechs ---------- */
-  RIMC = "#ffc46a"; // warm backlight on the player's side
-  def("mech", "tiepen", "铁盆号（大肥鱼的机甲）", () => [0, 1].map(k => { const g = new G(66, 50);
-    const legs = (x, b) => S(g, 66, 50, m => { mpoly(m, [[x, 34], [x + 6, 34], [x + 5, 43 - k * (b > 2 ? 1 : 0)], [x + 1, 43]], 1); mpoly(m, [[x - 2, 42], [x + 8, 42], [x + 9, 47], [x - 3, 47]], 1); }, R.steel, { base: b, bev: 2 });
-    legs(38, 1.6);
-    S(g, 66, 50, m => mpoly(m, [[2, 12], [10, 20], [12, 24], [10, 28], [2, 36], [6, 24]], 2), R.blue, { base: 2, bev: 3 });
-    const hull = new M(66, 50); mpoly(hull, [[9, 22], [20, 13], [40, 11], [54, 17], [60, 25], [52, 35], [20, 36], [10, 30]], 2);
-    sculpt(g, hull, R.blue, { base: 2.2, bev: 5, k: 1.6, fn: (x, y, v, d) => y > 27 + Math.sin(x * .12) * 2 ? pick(R.rice, 2.6 + (d < 2 ? -.8 : 0), x, y) : v });
-    S(g, 66, 50, m => mpoly(m, [[26, 12], [31, 3], [35, 4], [36, 12]], 1), R.blue, { base: 2.6, bev: 2 });
-    for (const [x, y] of [[18, 20], [26, 17], [48, 19], [24, 32], [44, 33]]) rivet(g, x, y, R.blue); groove(g, 30, 14, 31, 34, R.blue);
-    const bowl = new M(66, 50); mblob(bowl, 44, 13, 10, 7); for (let y = 13; y < 50; y++) for (let x = 0; x < 66; x++) bowl.a[y * 66 + x] = 0; sculpt(g, bowl, R.iron, { base: 2.6, bev: 4, k: 1.8 });
-    for (let x = 33; x < 56; x++) { g.set(x, 13, x < 40 ? R.iron[4] : R.iron[3]); g.set(x, 14, R.iron[1]); } for (let x = 40; x < 50; x++) g.set(x, 10, pick(R.cyan, 2.8 + (x < 43 ? 1 : 0), x, 10));
-    S(g, 66, 50, m => mblob(m, 53, 23, 1.8, 1.8), R.ink, { base: 1 }); g.set(52, 22, "#ffffff");
-    pts(g, [[14, 26], [16, 25], [15, 28]], R.rice[4]); for (const [x, y] of [[36, 20], [38, 20], [36, 21], [36, 22], [38, 22], [39, 21]]) g.set(x, y, R.gold[3]);
-    S(g, 66, 50, m => { mpoly(m, [[38, 29], [60, 28], [62, 30], [60, 33], [38, 33]], 0); mblob(m, 62, 30.5, 3, 3, 4); }, R.steel, { base: 2.2, bev: 2 }); for (let x = 41; x < 58; x += 4) g.set(x, 30, R.cyan[4]);
-    legs(22, 2.4);
-    const o = outline(g); glow(o, 63, 31, 7, R.cyan[3], .45); glow(o, 45, 10, 6, R.cyan[3], .3); rim(o, R.gold[3], "up", .25); return o; }), "鲸形机体，铁盆是驾驶舱，两帧踏步");
-  def("mech", "tank", "格洛克的坦克", () => [0, 1].map(k => { const g = new G(72, 40);
-    S(g, 72, 40, m => mblob(m, 36, 32, 32, 6.5, 2.6), R.ink, { base: 1.8, bev: 2 }); for (let x = 9 + k * 2; x < 64; x += 6) S(g, 72, 40, m => mblob(m, x, 32, 2.8, 2.8), R.iron, { base: 2.4, bev: 2 });
-    for (let x = 6; x < 67; x++) { if ((x + k * 2) % 4 < 2) { g.set(x, 26, R.iron[3]); g.set(x, 38, R.iron[1]); } }
-    S(g, 72, 40, m => mpoly(m, [[3, 27], [12, 18], [60, 17], [69, 26], [62, 28], [10, 28]], 1), R.red, { base: 2, bev: 3, k: 1.7 });
-    S(g, 72, 40, m => mpoly(m, [[14, 22], [22, 19], [30, 22], [26, 24], [22, 23], [18, 24]], 1), R.gold, { base: 2.6, bev: 1 });
-    for (const [x, y] of [[36, 20], [44, 20], [52, 20], [60, 21]]) rivet(g, x, y, R.red); groove(g, 12, 25, 64, 25, R.red);
-    S(g, 72, 40, m => mpoly(m, [[24, 18], [28, 8], [48, 7], [52, 18]], 1), R.ink, { base: 2.2, bev: 3 });
-    S(g, 72, 40, m => { mpoly(m, [[48, 10], [66, 10], [66, 13], [48, 14]], 0); mpoly(m, [[64, 8], [71, 8], [71, 15], [64, 15]], 1); }, R.iron, { base: 2.3, bev: 2 });
-    for (let x = 30; x < 46; x += 3) g.set(x, 9, R.gold[3]); line(g, 30, 7, 28, 0, R.iron[3]); S(g, 72, 40, m => mpoly(m, [[28, 0], [34, 1], [28, 4]], 0), R.red, { base: 3 });
-    const o = outline(g); rim(o, R.orange[3], "up", .3); return o; }), "两帧履带 · 蝙蝠翼徽记");
+  RIMC = RIM.synod;
+  def("enemy", "deacon", "缄默执事（原缄口卫兵）", () => [0, 1].map(k => { const g = new G(34, 56), sw = k ? 1 : -1;
+    S(g, 34, 56, m => mpoly(m, [[9, 18], [25, 18], [31 + sw, 55], [3 + sw, 55]], 1), R.ink, { base: 2, bev: 3, k: 1.6, fn: (x, y, v, d) => (d <= 2 && y > 48) || (d <= 1.5 && x < 10 && y > 30) ? R.red[2] : v });
+    for (const x of [13, 18, 23]) groove(g, x, 22, x + (x - 18) * .3 + sw * .5, 52, R.ink);
+    S(g, 34, 56, m => mpoly(m, [[17, 0], [24, 8], [25, 17], [9, 17], [10, 8]], 1), R.ink, { base: 2.4, bev: 3, fn: (x, y, v, d) => d <= 1.01 ? R.gold[3] : v });
+    S(g, 34, 56, m => mblob(m, 17, 13, 5, 4.6, 2.6), R.marble, { base: 3, bev: 3, k: 1.6 }); for (const x of [13, 18]) for (let i = 0; i < 3; i++) g.set(x + i, 12, R.gold[4]);
+    for (const x of [15, 17, 19]) { g.set(x, 15, R.gold[3]); g.set(x, 16, R.gold[2]); }
+    line(g, 28, 4, 28, 55, R.steel[2], 2); for (const x of [26, 31]) line(g, x, 0, x, 7, R.steel[3], 2); line(g, 26, 7, 32, 7, R.steel[2], 2);
+    S(g, 34, 56, m => mblob(m, 8, 32, 9, 9), R.gold, { base: 2.4, bev: 4, k: 1.8 }); for (let a = 0; a < 8; a++) { const t = a * Math.PI / 4; line(g, 8 + Math.cos(t) * 9, 32 + Math.sin(t) * 9, 8 + Math.cos(t) * 11, 32 + Math.sin(t) * 11, R.gold[2], 2); }
+    for (let i = -8; i <= 8; i += 2) { g.set(8 + i, 32 + i * .7, R.iron[3]); g.set(8 + i + 1, 32 + i * .7, R.iron[1]); g.set(8 + i, 32 - i * .7 + 2, R.iron[2]); }
+    S(g, 34, 56, m => mpoly(m, [[6, 30], [10, 30], [10, 34], [6, 34]], 0), R.gold, { base: 4, bev: 1 });
+    return fin(g, RIM.synod, [[8, 32, 12, R.gold[4], .45], [16, 12, 5, R.gold[3], .3]]); }), "日轮盾心是弱点 · 嘴被金钉缝住 · 音叉长戟放出静音波");
+  def("enemy", "sunbell", "锁日钟（原诵经无人机）", () => [0, 1].map(k => { const g = new G(30, 40), dy = k ? 1 : 0;
+    for (let i = 0; i < 3; i++) { const x = 9 + i * 5 + (k ? (i - 1) : 0), y0 = 28 + dy; line(g, x, y0, x, y0 + 9, R.gold[2], 2); S(g, 30, 40, m => mblob(m, x + .5, y0 + 10, 1.8, 1.4), R.gold, { base: 3.2 }); }
+    for (let y = 0; y < 30; y++) for (let x = 0; x < 30; x++) { const d = Math.hypot(x + .5 - 15, y + .5 - 14 - dy); if (d > 12 || d < 9) continue; g.set(x, y, pick(R.gold, 3.2 - (y - 2) * .1 - (x > 15 ? .6 : 0), x, y)); }
+    for (let a = 0; a < 8; a++) { const t = a * Math.PI / 4 + k * .2; line(g, 15 + Math.cos(t) * 12, 14 + dy + Math.sin(t) * 12, 15 + Math.cos(t) * 14, 14 + dy + Math.sin(t) * 14, R.gold[3], 2); }
+    for (let i = -11; i <= 11; i += 2) { const p = k ? i : -i; g.set(15 + i, 14 + dy + p * .75, R.iron[3]); g.set(15 + i + 1, 14 + dy + p * .75, R.iron[1]); }
+    S(g, 30, 40, m => mblob(m, 15, 14 + dy, 5, 5), R.marble, { base: 3, bev: 3, k: 1.8 }); for (let x = 13; x < 17; x++) g.set(x, 15 + dy, R.gold[4]);
+    S(g, 30, 40, m => mblob(m, 15, 1 + dy, 4, 1.2, 3), R.gold, { base: 3.6 });
+    return fin(g, RIM.synod, [[15, 15 + dy, 8, R.gold[4], .45]]); }), "锁链缠住的日轮 · 瓷球在唱 · 风铃交错摆动");
 
+  RIMC = RIM.rogue;
+  def("enemy", "hound", "残响猎犬（原失控体）", () => [0, 1].map(k => { const g = new G(56, 50);
+    const leg = (hx, b, s) => S(g, 56, 50, m => { mline(m, hx, 30, hx + 5, 38 + s, 5); mline(m, hx + 5, 38 + s, hx, 46, 4); mpoly(m, [[hx - 4, 46], [hx + 4, 46], [hx + 5, 49], [hx - 4, 49]], 0); }, R.rust, { base: b, bev: 2 });
+    leg(36, 1.4, k ? 1 : 0);
+    S(g, 56, 50, m => { mline(m, 36, 8, 16, 2, 5); mpoly(m, [[12, -1], [18, 0], [18, 5], [12, 5]], 0); }, R.steel, { base: 2.2, bev: 2 }); for (let x = 20; x < 34; x += 4) g.set(x, 5, R.steel[1]);
+    S(g, 56, 50, m => { for (let i = 0; i < 4; i++) mline(m, 18 + i * 5, 20, 20 + i * 5, 34, 3); }, R.rust, { base: 1.8, bev: 1 });
+    S(g, 56, 50, m => mblob(m, 26, 28, 4, 4, 3), R.pink, { base: 3.4, bev: 3 }); g.set(25, 27, "#ffffff");
+    S(g, 56, 50, m => mpoly(m, [[14, 10], [22, 6], [36, 6], [42, 14], [40, 22], [16, 22], [12, 16]], 1), R.rust, { base: 2.2, bev: 4, k: 1.8 });
+    S(g, 56, 50, m => mpoly(m, [[26, 8], [34, 8], [35, 15], [27, 15]], 0), R.steel, { base: 2.4, bev: 2 }); for (const [x, y] of [[27, 9], [33, 9], [27, 14], [33, 14]]) rivet(g, x, y, R.steel);
+    for (const [ox, c] of [[0, R.purple[2]], [2, R.purple[3]], [4, R.purple[1]]]) { line(g, 12 + ox, 18, 18 + ox, 30, c, 2); g.set(18 + ox, 31, R.pink[4]); }
+    S(g, 56, 50, m => mpoly(m, [[3, 18], [12, 15], [16, 20], [14, 26], [4, 25]], 1), R.iron, { base: 2.2, bev: 2 }); for (let x = 5; x < 9; x++) { g.set(x, 20, R.red[x === 6 ? 4 : 3]); g.set(x, 21, R.red[2]); }
+    S(g, 56, 50, m => { mline(m, 16, 22, 6, 33, 4); mpoly(m, [[0, 32], [8, 31], [9, 37], [2, 38]], 1); }, R.iron, { base: 2.4, bev: 2 }); pts(g, [[0, 37], [1, 39], [4, 39]], R.iron[4]);
+    leg(24, 2.3, k ? 0 : 1);
+    return fin(g, RIM.rogue, [[26, 28, 10, R.pink[3], .55], [6, 20, 6, R.red[3], .5]]); }), "肋笼里的粉色核心是弱点 · 头后垂着一束线缆马尾");
+  def("enemy", "repeater", "复读巨像（原过拟合巨像，Boss）", () => { const g = new G(80, 88);
+    for (const x of [30, 46]) S(g, 80, 88, m => mpoly(m, [[x, 66], [x + 12, 66], [x + 13, 86], [x - 1, 86]], 1), R.iron, { base: 1.8, bev: 3 });
+    for (let i = 0; i < 3; i++) { const y = 22 + i * 14; S(g, 80, 88, m => mpoly(m, [[28, y], [54, y], [53, y + 14], [29, y + 14]], 1), i % 2 ? R.iron : R.rust, { base: 2.2, bev: 3, k: 1.6 }); groove(g, 31, y + 7, 51, y + 7, i % 2 ? R.iron : R.rust); for (const x of [32, 50]) rivet(g, x, y + 3, R.iron); }
+    const steps = [[58, 20], [62, 26], [64, 33], [65, 40], [66, 47], [68, 54], [70, 60]]; steps.forEach(([x, y], i) => S(g, 80, 88, m => mpoly(m, [[x, y], [x + 6, y], [x + 6, y + 5], [x, y + 5]], 0), [R.green, R.green, R.green, R.gold, R.orange, R.red, R.red][i], { base: 3, bev: 2 }));
+    S(g, 80, 88, m => { mblob(m, 28, 27, 7, 6, 2.4); mline(m, 26, 30, 14, 44, 8); mpoly(m, [[0, 44], [24, 44], [24, 62], [0, 62]], 1); }, R.steel, { base: 2.2, bev: 4, k: 1.8 }); groove(g, 2, 53, 22, 53, R.steel); for (const [x, y] of [[3, 47], [21, 47], [3, 59], [21, 59]]) rivet(g, x, y, R.steel);
+    for (let y = 30; y < 42; y += 3) { g.set(20 - (y - 30) * .4, y, R.gold[3]); }
+    S(g, 80, 88, m => mblob(m, 68, 40, 8, 8), R.ink, { base: 1.6, bev: 2 }); S(g, 80, 88, m => mblob(m, 68, 40, 6, 6), R.cyan, { base: 2.8, bev: 3 }); for (let a = 0; a < 6; a++) { const t = a * Math.PI / 3; line(g, 68, 40, 68 + Math.cos(t) * 6, 40 + Math.sin(t) * 6, R.ink[2]); } S(g, 80, 88, m => mblob(m, 68, 40, 2, 2), R.cyan, { base: 4 });
+    S(g, 80, 88, m => mpoly(m, [[33, 0], [47, 0], [48, 22], [32, 22]], 1), R.iron, { base: 2.4, bev: 3 }); for (let i = 0; i < 5; i++) for (let x = 38; x < 42; x++) { g.set(x, 3 + i * 4, R.red[i === 2 ? 4 : 3]); g.set(x, 4 + i * 4, R.red[2]); }
+    return fin(g, RIM.rogue, [[68, 40, 14, R.cyan[3], .5], [40, 11, 10, R.red[3], .45]]); }, "三块一模一样的躯干 · 五只竖眼 · 背上是过拟合曲线 · 胶片卷是弱点");
+  def("enemy", "lampnun", "无影灯修女（原手术机械，Boss）", () => { const g = new G(88, 72);
+    S(g, 88, 72, m => { mpoly(m, [[24, 66], [64, 66], [60, 62], [28, 62]], 0); mline(m, 44, 50, 26, 66, 3); mline(m, 44, 50, 62, 66, 3); }, R.iron, { base: 2, bev: 1 }); for (const x of [24, 42, 62]) S(g, 88, 72, m => mblob(m, x, 69, 2.4, 2.4), R.ink, { base: 2.4 });
+    S(g, 88, 72, m => mpoly(m, [[36, 28], [52, 28], [50, 40], [54, 52], [34, 52], [38, 40]], 1), R.marble, { base: 2.4, bev: 3, k: 1.6 }); for (let y = 30; y < 50; y += 4) groove(g, 38, y, 50, y, R.marble); S(g, 88, 72, m => mblob(m, 44, 36, 3, 3), R.pink, { base: 2.6 });
+    const arm = (pts2, tip) => { S(g, 88, 72, m => { for (let i = 0; i < pts2.length - 1; i++) mline(m, ...pts2[i], ...pts2[i + 1], 3); }, R.steel, { base: 2.2, bev: 1 }); pts2.slice(1, -1).forEach(([x, y]) => S(g, 88, 72, m => mblob(m, x, y, 2.2, 2.2), R.iron, { base: 2.8 })); tip(); };
+    arm([[40, 32], [26, 20], [12, 22]], () => S(g, 88, 72, m => mpoly(m, [[2, 22], [12, 20], [12, 24]], 0), R.rice, { base: 4 }));
+    arm([[40, 40], [24, 44], [14, 52]], () => { S(g, 88, 72, m => mpoly(m, [[8, 50], [14, 50], [14, 64], [8, 64]], 0), R.marble, { base: 2.6, bev: 1 }); for (let y = 54; y < 63; y++) { g.set(10, y, R.pink[3]); g.set(11, y, R.pink[2]); } line(g, 11, 64, 11, 69, R.iron[4]); });
+    arm([[48, 32], [62, 22], [74, 26]], () => { line(g, 74, 26, 82, 22, R.steel[3], 2); line(g, 74, 26, 82, 30, R.steel[3], 2); });
+    arm([[48, 40], [64, 46], [76, 42]], () => { for (let a = 0; a < 10; a++) g.set(78 + Math.cos(a * .35) * 4, 42 - Math.sin(a * .35) * 4, R.rice[4]); });
+    line(g, 44, 22, 52, 34, R.pink[2], 2); g.set(53, 35, R.pink[4]);
+    S(g, 88, 72, m => mblob(m, 44, 22, 6, 6, 2.4), R.rice, { base: 3, bev: 3, k: 1.6 }); for (const x of [41, 46]) { g.set(x, 21, R.ink[2]); g.set(x + 1, 22, R.ink[2]); } for (let x = 42; x < 47; x++) g.set(x, 25, x === 42 || x === 46 ? R.ink[2] : R.red[2]); line(g, 47, 17, 49, 26, R.pink[3]);
+    for (let i = 0; i < 7; i++) { const t = Math.PI + (i / 6) * Math.PI, x = 44 + Math.cos(t) * 14, y = 10 + Math.sin(t) * 6 + 4; S(g, 88, 72, m => mblob(m, x, y, 3.4, 3.4), R.marble, { base: 2.8, bev: 2 }); S(g, 88, 72, m => mblob(m, x, y + .5, 1.6, 1.6), i === 3 ? R.cyan : R.rice, { base: 4 }); }
+    S(g, 88, 72, m => mpoly(m, [[30, 12], [58, 12], [56, 15], [32, 15]], 0), R.marble, { base: 2.2, bev: 1 });
+    return fin(g, RIM.rogue, [[44, 7, 16, R.cyan[3], .5], [44, 12, 30, R.rice[4], .15]]); }, "坚信自己在治疗 · 中心的灯是弱点 · 不使用红十字");
+
+  /* ---------- 5. mechs v4 ---------- */
+  RIMC = "#ffc46a";
+  def("mech", "tiepen", "铁盆号（大肥鱼的机甲）", () => [0, 1, 2].map(k => { const g = new G(64, 48), dy = k === 1 ? 1 : 0, shield = k === 2;
+    for (const x of [22, 38]) { S(g, 64, 48, m => mpoly(m, [[x, 34], [x + 8, 34], [x + 8, 43], [x, 43]], 1), R.steel, { base: x === 22 ? 1.6 : 2.4, bev: 2 }); S(g, 64, 48, m => mpoly(m, [[x - 2, 43], [x + 10, 43], [x + 10, 47], [x - 3, 47]], 1), R.steel, { base: 2.2, bev: 1 }); }
+    S(g, 64, 48, m => mpoly(m, [[0, 4 + dy], [6, 6 + dy], [14, 14 + dy], [12, 20 + dy], [4, 14 + dy]], 1), R.blue, { base: 2.4, bev: 2 }); S(g, 64, 48, m => mblob(m, 12, 17 + dy, 2, 2), R.cyan, { base: 3.8 });
+    const hull = new M(64, 48); mpoly(hull, [[12, 22 + dy], [20, 12 + dy], [34, 9 + dy], [50, 10 + dy], [58, 18 + dy], [58, 30 + dy], [50, 37 + dy], [16, 36 + dy]], 2);
+    sculpt(g, hull, R.blue, { base: 2.3, bev: 6, k: 1.8, fn: (x, y, v, d) => y > 29 + dy + Math.sin(x * .3) * 1.4 ? pick(R.rice, 2.8 - (d < 2 ? .8 : 0), x, y) : v });
+    for (const [x, y] of [[22, 16], [46, 14]]) rivet(g, x, y + dy, R.blue); groove(g, 30, 11 + dy, 32, 35 + dy, R.blue);
+    if (!shield) { const bm = new M(64, 48); mblob(bm, 33, 10 + dy, 9, 8); for (let i = (10 + dy) * 64; i < 64 * 48; i++) bm.a[i] = 0; sculpt(g, bm, R.steel, { base: 2.8, bev: 4, k: 1.8 }); for (let x = 24; x < 43; x++) { g.set(x, 10 + dy, x < 30 ? R.steel[4] : R.steel[3]); g.set(x, 11 + dy, R.steel[1]); } pts(g, [[26, 9 + dy], [27, 8 + dy], [26, 7 + dy]], R.blue[3]); }
+    else { S(g, 64, 48, m => mblob(m, 60, 22, 4, 12, 2.4), R.steel, { base: 2.8, bev: 3 }); for (let y = 12; y < 33; y++) if (g.get(60, y)) g.set(60, y, R.steel[4]); }
+    S(g, 64, 48, m => mblob(m, 54, 14 + dy, 3, 3), R.cyan, { base: 3.4 }); S(g, 64, 48, m => mblob(m, 50, 21 + dy, 1.8, 1.8), R.ink, { base: .6 }); g.set(49, 20 + dy, "#ffffff");
+    S(g, 64, 48, m => mpoly(m, [[50, 25 + dy], [58, 25 + dy], [58, 28 + dy], [50, 28 + dy]], 0), R.ink, { base: 1 });
+    const o = outline(g); rim(o, "#ffc46a", "up", .35); glow(o, 55, 15 + dy, 7, R.cyan[3], .4); glow(o, 13, 18, 6, R.cyan[3], .4); return o; }), "待机两帧 + 铁盆翻到前方变护盾");
+  def("mech", "tank", "断约号（格洛克的战车）", () => [0, 1].map(k => { const g = new G(72, 40);
+    S(g, 72, 40, m => mblob(m, 36, 34, 32, 5, 2.6), R.ink, { base: 1.8, bev: 2 }); for (let x = 12 + k * 2; x < 64; x += 14) S(g, 72, 40, m => mblob(m, x, 34, 3, 3), R.gold, { base: 2.6 });
+    for (let x = 6; x < 67; x++) if ((x + k * 2) % 4 < 2) { g.set(x, 29, R.iron[3]); g.set(x, 38, R.iron[1]); }
+    S(g, 72, 40, m => mpoly(m, [[10, 14], [62, 14], [66, 30], [6, 30]], 1), R.ink, { base: 2.2, bev: 3, k: 1.7 }); for (let x = 8; x < 65; x++) if (g.get(x, 22)) g.set(x, 22, R.red[3]);
+    for (let i = 0; i < 4; i++) { g.set(40 + i * 3, 26 - (i % 2), R.gold[3]); g.set(41 + i * 3, 25 + (i % 2), R.gold[2]); }
+    S(g, 72, 40, m => mpoly(m, [[30, 5], [50, 5], [50, 14], [30, 14]], 1), R.ink, { base: 2.6, bev: 2 }); for (let x = 31; x < 50; x++) g.set(x, 6, R.red[3]);
+    for (const y of [7, 10]) S(g, 72, 40, m => mpoly(m, [[14, y], [30, y], [30, y + 2], [14, y + 2]], 0), R.steel, { base: 2.6, bev: 1 });
+    S(g, 72, 40, m => mpoly(m, [[10, 10], [2, 13], [0, 20], [2, 28], [10, 30], [6, 20]], 2), R.steel, { base: 2.6, bev: 3, k: 1.8 }); for (let y = 12; y < 29; y++) { const x = Math.round(1 + Math.abs(y - 20) * .22); if (g.get(x, y)) g.set(x, y, "#ffffff"); }
+    S(g, 72, 40, m => mpoly(m, [[56, 8], [64, 4], [62, 10], [68, 9], [60, 14]], 1), R.red, { base: 2.6, bev: 1 }); S(g, 72, 40, m => mblob(m, 60, 10, 1.6, 1.6), R.red, { base: 4 });
+    for (const y of [6, 9]) line(g, 50, y, 62 + (k ? 1 : 0), y + 4 + (k ? 1 : 0), R.gold[3], 2);
+    const o = outline(g); rim(o, "#ffc46a", "up", .3); glow(o, 61, 11, 7, R.red[3], .5); return flipG(o); }), "新月斧刃当铲刀 · 两条金色飘带 · 蝙蝠翼排气口");
   RIMC = null;
   /* ---------- 6. tiles 16×16 ---------- */
   const tile = (id, name, fn, frames = 1, note) => def("tile", id, name, () => Array.from({ length: frames }, (_, k) => fn(k)), note);
@@ -558,7 +567,7 @@
     { const m = new M(SW, SH); mpoly(m, [[-4, SH], [-4, 0], [22, 0], [26, 20], [22, 24], [22, SH]], 0); mpoly(m, [[302, SH], [302, 24], [298, 20], [302, 0], [324, 0], [324, SH]], 0); sculpt(g, m, R.ink, { base: .8, bev: 4, k: 1.6, rim: "#5fd0e6" });
       const iv = rng(9); for (const sx of [20, 303]) { let x = sx; for (let y = 0; y < 120; y++) { x += Math.round((iv() - .5) * 1.2); g.set(x, y, R.moss[2]); if (y % 4 === 0) { g.set(x - 1, y, R.moss[3]); g.set(x + 1, y + 1, R.moss[1]); } } } }
     for (let i = 0; i < 6; i++) { const x = 126 + i * 14; S(g, SW, SH, m => { mpoly(m, [[x - 7, 174], [x - 6, 164], [x - 3, 158], [x + 2, 155], [x + 6, 160], [x + 7, 174]], 1); mpoly(m, [[x - 3, 158], [x + 1, 149], [x + 5, 152], [x + 4, 158]], 1); }, R.ink, { base: .7, bev: 2, k: 1.4, rim: "#ffb860" }); }
-    { const c = A.find(a => a.id === "chantdrone"); if (c) g.blit(c.frames[0], 146, 100); }
+    { const c = A.find(a => a.id === "sunbell"); if (c) g.blit(c.frames[0], 146, 100); }
     particles(g, r, 120, [40, 90, 290, 170], ["#ffd890", "#ffb860", "#fff2c8"]);
     grade(g, "#08203a", "#ffb45a", .25, .18); bloom(g, .78, 4, .35); return g; }, "补色方案：青蓝阴影 + 暖橙火光 · 远中近三层拱廊");
   def("bg", "dusk", "荒原黄昏（旗舰场景）", () => { const g = new G(SW, SH), r = rng(505);
@@ -590,6 +599,84 @@
     particles(g, r, 140, [0, 20, SW, 176], ["#ffd0a0", "#ff9a60", "#b0a0a0"]);
     grade(g, "#10283a", "#ffb060", .28, .16); bloom(g, .8, 4, .32); return g; }, "补色方案：暖橙天光 + 青色边缘光 · 倒下的巨型机体");
 
+  /* ---------- 9c. scene toolkit: masonry, platforms, vines, cages, doors, relighting ---------- */
+  function S2(g, x, y, w, h, build, ramp, o) { const t = new G(w, h), m = new M(w, h); build(m); sculpt(t, m, ramp, o); g.blit(t, x, y); return g; }
+  function masonry(g, x0, y0, w, h, ramp, r, o = {}) { // hand-cut stones, each its own volume and tone
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) g.set(x, y, o.mortar || ramp[0]);
+    let y = y0; while (y < y0 + h) { const sh = (o.sh || 6) + (r() * 3 | 0); let x = x0 - (r() * 8 | 0); while (x < x0 + w) { const sw = (o.sw || 10) + (r() * 8 | 0); const ax = Math.max(x0, x), bx = Math.min(x0 + w, x + sw), ay = y, by = Math.min(y0 + h, y + sh);
+        if (bx - ax > 2 && by - ay > 2) S2(g, ax, ay, bx - ax, by - ay, m => mpoly(m, [[.6, .6], [bx - ax - .6, .6], [bx - ax - .6, by - ay - .6], [.6, by - ay - .6]], 1), ramp, { base: (o.base ?? 1.7) + (r() - .5) * .9 + (o.vfade ? (1 - (y - y0) / h) * o.vfade : 0), bev: 2, k: 1.2, rim: null });
+        x += sw; } y += sh; }
+    if (o.moss) for (let i = 0; i < w * .15; i++) { const xx = x0 + r() * w | 0, yy = y0 + r() * h | 0; g.set(xx, yy, R.moss[2 + (r() * 2 | 0)]); g.set(xx + 1, yy, R.moss[2]); } }
+  function vine(g, x, y, len, r, col = R.moss) { let xx = x; for (let i = 0; i < len; i++) { xx += Math.round((r() - .5) * 1.2); g.set(xx, y + i, col[2]); if (i % 3 === 0) { g.set(xx - 1, y + i, col[3]); g.set(xx + 1, y + i + 1, col[1]); } if (i % 7 === 3) { g.set(xx + 1, y + i, col[4]); g.set(xx + 2, y + i, col[3]); } } }
+  function platform(g, x, y, w, r, kind = "stone", o = {}) { const h = o.h || 10;
+    if (kind === "wood") { S2(g, x, y, w, h, m => mpoly(m, [[0, 0], [w, 0], [w, 4], [0, 4]], 0), R.wood, { base: 2.4, bev: 1, rim: null }); for (let i = 0; i < w; i += 7) groove(g, x + i, y, x + i, y + 3, R.wood); for (const px of [x + 3, x + w - 5]) S2(g, px, y + 4, 3, h + 6, m => mpoly(m, [[0, 0], [3, 0], [3, h + 6], [0, h + 6]], 0), R.wood, { base: 1.6, bev: 1, rim: null }); line(g, x + 4, y + 5, x + w - 6, y + h + 4, R.wood[1]); }
+    else masonry(g, x, y, w, h, kind === "metal" ? R.iron : R.stone, r, { sh: 5, sw: 8, base: kind === "metal" ? 1.8 : 1.9 });
+    for (let i = 0; i < w; i++) { g.set(x + i, y, kind === "metal" ? R.gold[3] : "#cfe6d8"); if (kind !== "metal" && kind !== "wood" && r() < .35) { g.set(x + i, y - 1, R.moss[3]); if (r() < .3) g.set(x + i, y - 2, R.moss[4]); } }
+    if (o.vines !== false && kind !== "metal") for (let i = 0; i < w / 10; i++) vine(g, x + 2 + r() * (w - 4) | 0, y + h, 4 + r() * 12 | 0, r);
+    for (let yy = y + h; yy < y + h + 8; yy++) for (let i = 0; i < w; i++) { const c = g.get(x + i, yy); if (c) g.set(x + i, yy, mix(c, "#000000", .35 * (1 - (yy - y - h) / 8))); } }
+  function cage(g, x, y0, y, r) { chain(g, x, y0, y, "#5a6478"); S2(g, x - 7, y, 15, 20, m => { mblob(m, 7.5, 3, 7, 3, 2.4); mblob(m, 7.5, 18, 7, 2, 2.4); }, R.iron, { base: 2, bev: 2, rim: null }); for (let i = 0; i < 6; i++) line(g, x - 6 + i * 2.4, y + 3, x - 6 + i * 2.4, y + 17, R.iron[i < 3 ? 3 : 1]); if (r() < .6) glow(g, x, y + 10, 8, R.cyan[3], .35); }
+  function door(g, cx, base, w = 30, h = 46) { // interactable: stone arch, dark interior, glowing chained-sun sigil, flanking banners
+    S2(g, cx - w / 2 - 5, base - h - 6, w + 10, h + 6, m => mpoly(m, [[0, h + 6], [0, 14], [(w + 10) / 2, 0], [w + 10, 14], [w + 10, h + 6]], 1), R.stone, { base: 2.6, bev: 3, k: 1.8, rim: "#ffb860" });
+    const dm = new M(w, h - 4); mpoly(dm, [[0, h - 4], [0, 12], [w / 2, 2], [w, 12], [w, h - 4]], 1); const dt = new G(w, h - 4); fillCol(dt, dm, (x, y) => pick(R.ink, .4 + y / h * .8, x, y)); g.blit(dt, cx - w / 2, base - h + 4);
+    for (let a = 0; a < 16; a++) { const t = a * Math.PI / 8, l = a % 2 ? 6 : 9; line(g, cx, base - h / 2, cx + Math.cos(t) * l, base - h / 2 + Math.sin(t) * l, R.gold[a % 2 ? 2 : 3]); } S2(g, cx - 4, base - h / 2 - 4, 8, 8, m => mblob(m, 4, 4, 3.8, 3.8), R.gold, { base: 3.6, rim: null }); for (let a = 0; a < 14; a++) { const t = a * Math.PI / 7; g.set(cx + Math.cos(t) * 11, base - h / 2 + Math.sin(t) * 11, R.iron[3]); }
+    glow(g, cx, base - h / 2, 26, R.gold[3], .45); const b = A.find(q => q.id === "banner"); if (b) { g.blit(b.frames[0], cx - w / 2 - 28, base - h - 2); g.blit(b.frames[0], cx + w / 2 + 6, base - h - 2); } }
+  function relight(spr, amb, ambK, rimc, side = "right", k = .6) { // put a sprite into a scene: ambient tint + rim from the scene's key light
+    const o = spr.clone(); for (let i = 0; i < o.d.length; i++) if (o.d[i]) o.d[i] = mix(o.d[i], amb, ambK);
+    const dx = side === "right" ? 1 : side === "left" ? -1 : 0, dy = side === "up" ? -1 : 0;
+    for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) { if (!spr.get(x, y)) continue; if (!spr.get(x + dx, y + dy)) o.set(x, y, mix(spr.get(x, y), rimc, k)); else if (!spr.get(x + 2 * dx, y + 2 * dy)) o.set(x, y, mix(o.get(x, y), rimc, k * .35)); } return o; }
+  function charGrid(id, flip) { const c = root.CHAR64 && root.CHAR64[id]; if (!c) return null; const g = new G(c.w, c.h); const raw = typeof atob === "function" ? atob(c.px) : Buffer.from(c.px, "base64").toString("binary");
+    for (let i = 0; i < raw.length; i++) { const v = raw.charCodeAt(i); if (v) { const x = i % c.w, y = (i / c.w) | 0; g.set(flip ? c.w - 1 - x : x, y, c.pal[v - 1]); } } return g; }
+  function flipG(s) { const o = new G(s.w, s.h); for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) { const c = s.get(x, y); if (c) o.set(s.w - 1 - x, y, c); } return o; }
+  const place = (g, spr, x, baseY) => { if (spr) g.blit(spr, Math.round(x - spr.w / 2), baseY - spr.h); };
+
+  /* ---------- 9d. four full gameplay screens (320×180) ---------- */
+  def("level", "lv_hall", "关卡 · 圣堂回廊", () => { const g = new G(SW, SH), r = rng(601); g.blit(A.find(a => a.id === "hall").frames[0], 0, 0);
+    fog(g, 0, SH, "#0a1828", .3);
+    for (const [x, y] of [[36, 0], [276, 0]]) cage(g, x, y, 30 + (x % 20), r);
+    platform(g, -4, 150, 130, r); platform(g, 196, 150, 130, r); platform(g, 140, 112, 44, r, "wood"); platform(g, 40, 92, 54, r);
+    door(g, 262, 150, 28, 44);
+    const fish = relight(charGrid("deepseek"), "#1a2c40", .18, "#ffb860", "right", .55); place(g, fish, 70, 150);
+    const guard = A.find(a => a.id === "deacon"); if (guard) place(g, relight(guard.frames[0], "#10203a", .2, "#ffb860", "left", .5), 228, 150);
+    const cd = A.find(a => a.id === "sunbell"); if (cd) place(g, relight(cd.frames[0], "#10203a", .1, "#ffd890", "left", .4), 162, 90);
+    for (let x = 118; x < 200; x += 6) { g.set(x, 172 + (x % 4), "#08101a"); } const hud = new G(108, 36); hud.blit(panel(108, 36, "synod"), 0, 0); hud.blit(bar(80, R.red, .8), 22, 7); hud.blit(bar(80, R.rice, .55), 22, 20); hud.blit(A.find(a => a.id === "token").frames[0], 3, 16); g.blit(hud, 4, 4);
+    particles(g, r, 60, [20, 40, 300, 160], ["#ffd890", "#ffb860"]); bloom(g, .82, 3, .25); return g; }, "大肥鱼潜入圣堂：平台、门、吊笼、缄口卫兵、诵经无人机");
+  def("bg", "dockdusk", "白饭湾码头 · 黄昏（旗舰场景）", () => { const g = new G(SW, SH), r = rng(707);
+    skyRows(g, ["#2a1640", "#5a2050", "#a8344e", "#ea6a48", "#ffaa5c", "#ffd896"], 0, 112);
+    S(g, SW, SH, m => mblob(m, 220, 98, 20, 20), R.gold, { base: 3.9, bev: 12, rim: null }); glow(g, 220, 98, 100, "#ff9a50", .45);
+    for (const [cx, cy, w] of [[60, 30, 46], [180, 18, 40], [280, 44, 34]]) S(g, SW, SH, m => { mblob(m, cx, cy, w, 4, 2.4); mblob(m, cx - w * .3, cy - 3, w * .5, 4); }, ["#3a1a3a", "#6a2a4a", "#b04a5a", "#f08a6a", "#ffc49a"], { base: 2.8, bev: 3, rim: "#ffe0a0" });
+    // far town on the hill: analogous purples, lit windows
+    S(g, SW, SH, m => mpoly(m, [[0, 104], [40, 90], [90, 96], [130, 84], [170, 98], [320, 100], [320, 120], [0, 120]], 2), ["#2a1638", "#3e2048", "#5a2c56", "#7a3a62", "#9a4a6a"], { base: 1.6, bev: 3, rim: "#ffb070" });
+    for (let x = 4; x < 180; x += 9) { const h = 6 + r() * 8 | 0, by = 104 - Math.abs(x - 90) * .08; S(g, SW, SH, m => { mpoly(m, [[x, by], [x, by - h], [x + 7, by - h], [x + 7, by]], 0); mpoly(m, [[x - 1, by - h], [x + 3.5, by - h - 4], [x + 8, by - h]], 0); }, ["#24122e", "#361a40", "#4a244e", "#5e2e58", "#743a62"], { base: 2, bev: 1, rim: "#ffb070" }); if (r() < .7) g.set(x + 3, by - h + 3, "#ffd070"); }
+    fog(g, 80, 120, "#ea6a48", .3);
+    // sea with sun reflection
+    for (let y = 112; y < SH; y++) for (let x = 0; x < SW; x++) { const t = (y - 112) / 68; let c = pick(["#1a1438", "#2a1a4a", "#4a2a5a", "#7a3a5a"], 3 - t * 2.4 + Math.sin(x * .15 + y * .9) * .3, x, y, .1); if (Math.abs(x - 220) < 18 - t * 8 && Math.sin(x * .7 + y * 2.1) > .2) c = y % 2 ? "#ffd896" : "#ffaa5c"; g.set(x, y, c); }
+    // pier, scaffolding, boats, lantern string
+    platform(g, -4, 138, 200, r, "wood", { h: 14 }); platform(g, 210, 150, 120, r, "wood", { h: 10 }); platform(g, 40, 104, 70, r, "wood", { h: 8 });
+    for (const px of [44, 104]) S2(g, px, 104, 4, 34, m => mpoly(m, [[0, 0], [4, 0], [4, 34], [0, 34]], 0), R.wood, { base: 1.6, bev: 1, rim: "#ffb070" });
+    for (let i = 0; i <= 40; i++) { const t = i / 40, x = 20 + t * 170, y = 70 + Math.sin(t * Math.PI) * 18; g.set(x, y, "#2a1a20"); if (i % 5 === 0) { S2(g, x - 2, y + 1, 5, 6, m => mblob(m, 2.5, 3, 2.2, 2.8), i % 10 ? R.orange : R.gold, { base: 3.4, rim: null }); glow(g, x, y + 4, 12, "#ffaa5c", .4); } }
+    S2(g, 236, 122, 60, 18, m => mpoly(m, [[0, 4], [60, 4], [52, 16], [8, 16]], 1), R.rice, { base: 2.6, bev: 3, rim: "#ffd896" }); line(g, 262, 72, 262, 126, R.wood[1]); S2(g, 264, 74, 26, 44, m => mpoly(m, [[0, 0], [24, 40], [0, 40]], 0), R.rice, { base: 3, bev: 2, rim: "#ffd896" });
+    const ck = A.find(a => a.id === "cooker"); if (ck) g.blit(ck.frames[1], 140, 114); const cr = A.find(a => a.id === "crate"); if (cr) { g.blit(cr.frames[0], 160, 120); g.blit(cr.frames[0], 168, 102); }
+    const pg = A.find(a => a.id === "pigeon"); if (pg) { g.blit(pg.frames[1], 120, 52); g.blit(pg.frames[0], 76, 92); }
+    // foreground posts
+    for (const px of [6, 300]) S2(g, px, 120, 12, 60, m => mpoly(m, [[0, 0], [12, 2], [12, 60], [0, 60]], 1), R.wood, { base: .8, bev: 3, rim: "#ffb070" });
+    particles(g, r, 50, [0, 40, SW, 140], ["#ffd896", "#ffaa5c"]); grade(g, "#1a1040", "#ffc070", .22, .14); bloom(g, .8, 4, .3); return g; }, "邻近色方案：橙—洋红—紫 · 夕阳倒影 · 码头脚手架与灯串");
+  def("level", "lv_dock", "关卡 · 白饭湾码头", () => { const g = new G(SW, SH); g.blit(A.find(a => a.id === "dockdusk").frames[0], 0, 0);
+    place(g, relight(charGrid("deepseek"), "#3a1a40", .12, "#ffd896", "right", .5), 96, 138); place(g, relight(charGrid("qwen", true), "#3a1a40", .12, "#ffd896", "right", .5), 74, 104);
+    g.blit(panel(96, 22, "bay"), 4, 4); g.blit(bar(70, R.cyan, .6), 22, 10); g.blit(A.find(a => a.id === "compute").frames[0], 4, 7); return g; }, "大肥鱼和千问在码头 · 经营界面");
+  def("level", "lv_factory", "关卡 · 回收站", () => { const g = new G(SW, SH), r = rng(808); const b = A.find(a => a.id === "factory").frames[0]; for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) g.set(x, y, b.get(x * 256 / 320, y * 144 / 180));
+    fog(g, 0, SH, "#0a1418", .35); platform(g, -4, 152, 150, r, "metal"); platform(g, 186, 152, 140, r, "metal"); platform(g, 120, 118, 70, r, "metal");
+    for (let x = 146; x < 186; x++) for (let y = 160; y < 180; y++) g.set(x, y, pick(["#1a0406", "#3a0a0c", "#7a1416", "#c02a24"], 1.4 + Math.sin(x * .4 + y * .3) * .6 + (y - 160) / 12, x, y, .2)); glow(g, 166, 166, 30, "#ff4a2a", .4);
+    const gk = relight(charGrid("grok"), "#1a0a10", .15, "#5fd0e6", "left", .55); place(g, gk, 60, 152);
+    const rg = A.find(a => a.id === "hound"); if (rg) place(g, relight(rg.frames[0], "#1a0a10", .1, "#5fd0e6", "left", .45), 250, 152);
+    const cw = A.find(a => a.id === "datatick"); if (cw) place(g, relight(cw.frames[0], "#1a0a10", .1, "#5fd0e6", "left", .45), 160, 118);
+    const ex = A.find(a => a.id === "explosion"); if (ex) g.blit(ex.frames[1], 210, 110);
+    particles(g, r, 60, [0, 0, SW, SH], ["#ff6a4a", "#ffd890"]); bloom(g, .8, 3, .25); return g; }, "格洛克在回收站：钢板平台、熔池、失控体与爬虫");
+  def("level", "lv_seal", "关卡 · 封印大厅（终章）", () => { const g = new G(SW, SH), r = rng(909); const b = A.find(a => a.id === "seal").frames[0]; for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) g.set(x, y, b.get(x * 256 / 320, y * 144 / 180));
+    for (const [x, y, w] of [[20, 140, 70], [230, 140, 70], [120, 104, 80], [60, 72, 40], [220, 72, 40]]) { platform(g, x, y, w, r, "stone", { h: 7, vines: false }); for (let i = 0; i < w; i++) g.set(x + i, y, "#e6dcff"); glow(g, x + w / 2, y, w * .6, "#9a88f2", .25); }
+    const kl = relight(charGrid("claude"), "#e6dcff", .35, "#ffffff", "up", .6); place(g, kl, 160, 104); glow(g, 160, 80, 30, "#f4f1ff", .35);
+    place(g, relight(charGrid("deepseek"), "#1a1440", .15, "#d8d0ff", "right", .55), 56, 140);
+    particles(g, r, 80, [0, 0, SW, SH], ["#e6dcff", "#ffd890", "#9a88f2"]); bloom(g, .82, 4, .3); return g; }, "零度的克劳德与赶来的大肥鱼");
+
   /* ---------- 10. UI ---------- */
   function panel(w, h, style) { const g = new G(w, h), st = style === "synod" ? { b: R.gold, f: R.ink } : { b: R.wood, f: R.sand };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const e = Math.min(x, y, w - 1 - x, h - 1 - y); if ((x < 2 || x > w - 3) && (y < 2 || y > h - 3)) continue; if (e === 0) g.set(x, y, st.b[0]); else if (e === 1) g.set(x, y, st.b[x < w / 2 && y < h / 2 ? 3 : 2]); else if (e === 2) g.set(x, y, st.b[1]); else g.set(x, y, pick(st.f, style === "synod" ? 1.4 + (y < 6 ? .4 : 0) : 3 - y / h * .8, x, y)); }
@@ -612,7 +699,7 @@
   const get = id => A.find(a => a.id === id).frames;
   def("mock", "shooter", "横版射击 · 荒原", () => { const g = new G(320, 180); g.blit(get("dusk")[0], 0, 0);
     for (let x = 0; x < 320; x += 16) { g.blit(get("rubble")[0], x, 152); g.blit(get("metal")[0], x, 166); }
-    g.blit(get("tiepen")[0], 34, 104); g.blit(get("rogue")[0], 214, 98); g.blit(get("crawler")[0], 276, 130); g.blit(get("spam")[0], 176, 34);
+    g.blit(get("tiepen")[0], 34, 104); g.blit(get("hound")[0], 214, 98); g.blit(get("datatick")[0], 276, 130); g.blit(get("horn")[0], 176, 34);
     const bl = get("bullets")[0]; for (let i = 0; i < 4; i++) for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) { const c = bl.get(x, y); if (c) g.set(104 + i * 24 + x, 131 + y, c); }
     g.blit(get("muzzle")[0], 98, 128); g.blit(get("explosion")[2], 226, 94); g.blit(get("spark")[1], 274, 128);
     const fg = new M(320, 180); mpoly(fg, [[-6, 180], [-2, 160], [10, 156], [20, 166], [24, 180]], 2); mline(fg, 300, 180, 312, 120, 4); mline(fg, 312, 120, 330, 118, 3); sculpt(g, fg, R.ink, { base: .5, bev: 2, k: .6 });
