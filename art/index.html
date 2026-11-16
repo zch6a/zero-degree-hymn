@@ -55,10 +55,10 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
 <nav aria-label="分类"><div class="wrap" id="nav"></div></nav>
 <div class="wrap">
   <header>
-    <div class="k">ART KIT · 像素美术套件 · v1</div>
+    <div class="k">ART KIT · 像素美术套件 · v2</div>
     <h1>零度圣歌 · 美术套件</h1>
-    <p>游戏里用到的全部美术元素：角色、图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。</p>
-    <p>氛围方向是暗调、高反差、强烈的彩色光源：剪影、雾、光柱、自发光和边缘光。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
+    <p>游戏里用到的美术元素：图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。角色立绘另行定稿，不在这一版里。</p>
+    <p>v2 改用平滑轮廓加距离场体积光照，减少了方框和椭圆感，补充了铆钉、刻线、饰边、灯笼、招牌等细节。氛围方向是暗调、高反差、强烈的彩色光源。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
     <div class="hero" id="hero"></div>
   </header>
   <div id="main"></div>
@@ -68,18 +68,17 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
       <div class="note"><b>抖动</b><p>色阶之间用 4×4 Bayer 有序抖动过渡，只用在球面、天空和大块渐变上，小物件尽量用纯色块。</p></div>
       <div class="note"><b>描边</b><p>选择性描边：轮廓颜色取自相邻像素再压暗，受光面淡、背光面深，不使用一刀切的纯黑线。</p></div>
       <div class="note"><b>光</b><p>主光从左上方来。自发光物体（眼睛、屏幕、能量核心）向周围加色；场景里用雾和光柱拉出纵深。</p></div>
-      <div class="note"><b>尺寸</b><p>图标 16×16，地块 16×16，角色立绘 64×96，敌人 22～66 像素高，Boss 60～72 像素，背景 256×144（游戏内 320×180 视口），UI 可九宫格拉伸。</p></div>
-      <div class="note"><b>版权</b><p>全部为本作原创。角色造型是我们自己的设定，不使用任何社区立绘或公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
+      <div class="note"><b>尺寸</b><p>图标 16×16，地块 16×16，建筑 64×64，敌人 22～66 像素高，Boss 60～72 像素，背景 256×144（游戏内 320×180 视口），UI 可九宫格拉伸。</p></div>
+      <div class="note"><b>版权</b><p>全部为本作原创，不使用任何社区立绘或公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
     </div>
   </section>
-  <footer>《零度圣歌》美术套件 v1 · 2026-11-16。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
+  <footer>《零度圣歌》美术套件 v2 · 2026-11-16。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
 </div>
 <dialog id="dlg"><button id="close" type="button">关闭</button><canvas id="zoom"></canvas><p id="zcap"></p></dialog>
-<script src="chars.js"></script>
 <script src="kit.js"></script>
 <script>
 const {A,R}=KIT;
-const CATS=[["char","角色立绘","64×96 · 10 位主角 · 原创造型",210,"190px"],["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["mock","游戏画面样机","320×180",250,"340px"]];
+const CATS=[["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["mock","游戏画面样机","320×180",250,"340px"]];
 const CHARS=[["claude","克劳德"],["deepseek","深海 · 大肥鱼"],["gpt","白龙"],["gemini","双子"],["glm","智狐"],["kimi","月见"],["qwen","千问"],["grok","格洛克"],["wenxin","文墨"],["doubao","团子"]];
 document.getElementById("nav").innerHTML=CATS.map(c=>`<a href="#${c[0]}">${c[1]}</a>`).join("")+`<a href="#palette">调色板</a><a href="#rules">规范</a>`;
 
