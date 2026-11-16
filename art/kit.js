@@ -59,15 +59,21 @@
     for (let y = H - 1; y >= 0; y--) for (let x = W - 1; x >= 0; x--) { const i = y * W + x; if (!d[i]) continue; d[i] = Math.min(d[i], at(x + 1, y) + 1, at(x, y + 1) + 1, at(x + 1, y + 1) + 1.41, at(x - 1, y + 1) + 1.41); }
     return { d, at }; }
   // sculpt: light from upper-left falls on the bevel; interior stays at base value
-  function sculpt(g, m, ramp, o = {}) { const { at } = dist(m), bev = o.bev ?? 3, base = o.base ?? 2, k = o.k ?? 1.5;
+  let RIMC = null; // per-category rim light colour (backlight from the scene)
+  function sculpt(g, m, ramp, o = {}) { const { at } = dist(m), bev = o.bev ?? 3, base = o.base ?? 2, k = o.k ?? 1.5, rimc = o.rim === undefined ? RIMC : o.rim, band = o.band ?? 0;
     let y0 = m.h, y1 = 0; for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) if (m.on(x, y)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
     for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { if (!m.on(x, y)) continue; const dd = at(x, y);
       let gx = (at(x + 1, y) - at(x - 1, y)) / 2, gy = (at(x, y + 1) - at(x, y - 1)) / 2; const L = Math.hypot(gx, gy) || 1; gx /= L; gy /= L;
-      const lit = .6 * gx + .8 * gy, w = Math.max(0, 1 - (dd - 1) / bev);
-      let v = base + lit * w * k + (o.vy ? (.5 - (y - y0) / Math.max(1, y1 - y0)) * o.vy : 0);
-      if (dd <= 1.01) v += lit > .3 ? .7 : lit < -.3 ? -.6 : 0;
+      const lit = .6 * gx + .8 * gy, t = Math.min(dd, bev) / bev, slope = Math.min(1.6, (1 - t) / Math.max(.3, Math.sqrt(1 - (1 - t) * (1 - t))));
+      let v = base + lit * slope * k * .75 + (o.vy ? (.5 - (y - y0) / Math.max(1, y1 - y0)) * o.vy : 0);
+      if (dd <= 1.01) v += lit > .3 ? .7 : lit < -.3 ? -.5 : 0;
       if (o.fn) v = o.fn(x, y, v, dd);
-      g.set(x, y, typeof v === "string" ? v : pick(ramp, v, x, y)); } return g; }
+      let c = typeof v === "string" ? v : pick(ramp, v, x, y, band);
+      if (rimc && typeof v !== "string" && dd <= 2.01 && lit < -.35) c = mix(c, rimc, dd <= 1.01 ? .55 : .25);
+      g.set(x, y, c); } return g; }
+  const lum = c => { const [r, g2, b] = h2r(c); return (r * .3 + g2 * .59 + b * .11) / 255; };
+  function bloom(g, thr = .8, r = 3, k = .22) { const src = g.clone(); for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) { const c = src.get(x, y); if (!c || lum(c) < thr) continue; for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) { const d = Math.hypot(i, j) / r; if (d > 1 || (!i && !j)) continue; const q = g.get(x + i, y + j); if (q) g.set(x + i, y + j, add(q, c, k * (1 - d) * (1 - d) * .35)); } } return g; }
+  function grade(g, shadow, light, ks = .3, kl = .16) { for (let i = 0; i < g.d.length; i++) { const c = g.d[i]; if (!c) continue; const l = lum(c); g.d[i] = l < .5 ? mix(c, shadow, ks * (1 - l * 2)) : mix(c, light, kl * (l - .5) * 2); } return g; }
   const S = (g, w, h, build, ramp, o) => { const m = new M(w, h); build(m); return sculpt(g, m, ramp, o); };
   function line(g, x0, y0, x1, y1, c, th2 = 1) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy; for (; ;) { for (let a = 0; a < th2; a++) for (let b = 0; b < th2; b++) g.set(x0 + a, y0 + b, c); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
   // engraved panel line: dark groove + highlight below, only on existing pixels
@@ -201,6 +207,7 @@
     for (let i = 0; i < 7; i++) { const x = 2 + r() * 10 | 0, y = 17 - ((i * 3 + k * 4) % 18); g.set(x, y, i % 2 ? R.purple[4] : R.gold[4]); if (i % 3 === 0) { g.set(x + 1, y, R.purple[2]); g.set(x - 1, y, R.purple[2]); g.set(x, y - 1, R.purple[2]); g.set(x, y + 1, R.purple[2]); } } return g; }));
 
   /* ---------- 4. enemies (face left) ---------- */
+  RIMC = "#62d6ff"; // cold backlight on threats
   def("enemy", "crawler", "爬虫无人机", () => [0, 1].map(k => { const g = new G(38, 24);
     const legs = (front) => { for (let i = 0; i < 3; i++) { const hx = 13 + i * 7, s = ((i + k) % 2 ? 1 : -1) * (front ? 1 : -1); const kx = hx - 3, ky = 8, fx = hx - 6 + s, fy = 22; line(g, hx, 12, kx, ky, front ? R.iron[3] : R.iron[1], 2); line(g, kx, ky, fx, fy, front ? R.iron[2] : R.iron[1]); g.set(fx - 1, fy, front ? R.iron[3] : R.iron[1]); } };
     legs(false);
@@ -288,6 +295,7 @@
     const o = outline(g); glow(o, 42, 24, 10, R.red[3], .4); glow(o, 42, 40, 14, R.green[3], .25); glow(o, 42, 13, 14, R.rice[4], .2); return o; }, "“请保持静止，正在为您治疗。”");
 
   /* ---------- 5. mechs ---------- */
+  RIMC = "#ffc46a"; // warm backlight on the player's side
   def("mech", "tiepen", "铁盆号（大肥鱼的机甲）", () => [0, 1].map(k => { const g = new G(66, 50);
     const legs = (x, b) => S(g, 66, 50, m => { mpoly(m, [[x, 34], [x + 6, 34], [x + 5, 43 - k * (b > 2 ? 1 : 0)], [x + 1, 43]], 1); mpoly(m, [[x - 2, 42], [x + 8, 42], [x + 9, 47], [x - 3, 47]], 1); }, R.steel, { base: b, bev: 2 });
     legs(38, 1.6);
@@ -314,6 +322,7 @@
     for (let x = 30; x < 46; x += 3) g.set(x, 9, R.gold[3]); line(g, 30, 7, 28, 0, R.iron[3]); S(g, 72, 40, m => mpoly(m, [[28, 0], [34, 1], [28, 4]], 0), R.red, { base: 3 });
     const o = outline(g); rim(o, R.orange[3], "up", .3); return o; }), "两帧履带 · 蝙蝠翼徽记");
 
+  RIMC = null;
   /* ---------- 6. tiles 16×16 ---------- */
   const tile = (id, name, fn, frames = 1, note) => def("tile", id, name, () => Array.from({ length: frames }, (_, k) => fn(k)), note);
   tile("grass", "草地", () => { const g = new G(16, 16), r = rng(11); for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) g.set(x, y, pick(R.grass, 2.1 + Math.sin(x * .9 + y * .4) * .3 + (r() - .5) * .4, x, y));
@@ -385,6 +394,7 @@
     for (let y = 5; y < 15; y += 2) line(g, 3, y, 11, y - 1, R.stone[3]); line(g, 14, 1, 14, 17, R.wood[1]); S(g, 28, 20, m => mpoly(m, [[17, 9], [23, 8], [21, 12]], 1), R.blue, { base: 3 }); g.set(18, 9, R.ink[1]); return outline(g); });
 
   /* ---------- 8. buildings 64×64 ---------- */
+  RIMC = "#ffd79a"; // late-afternoon sun behind the bay
   function ground(g) { for (let y = 58; y < 64; y++) for (let x = 0; x < 64; x++) g.set(x, y, pick(R.grass, y === 58 ? 3.2 : 2 - (y - 58) * .25, x, y)); const r = rng(77); for (let i = 0; i < 10; i++) { const x = r() * 64 | 0; g.set(x, 57, R.grass[3]); g.set(x + 1, 56, R.grass[4]); } for (let i = 0; i < 6; i++) S(g, 64, 64, m => mblob(m, 4 + r() * 56, 60 + r() * 2, 1.6, 1, 2), R.stone, { base: 2.6 }); }
   function wall(g, x, y0, y1, w, ramp, o = {}) { S(g, 64, 64, m => mpoly(m, [[x, y0], [x + w, y0], [x + w, y1], [x, y1]], 0), ramp, { base: o.base ?? 2.4, bev: 2, k: 1 });
     if (o.timber) { for (const xx of [x, x + w - 2, x + (w >> 1) - 1]) for (let y = y0; y < y1; y++) { g.set(xx, y, R.wood[2]); g.set(xx + 1, y, R.wood[1]); } for (let xx = x; xx < x + w; xx++) { g.set(xx, y0, R.wood[3]); g.set(xx, y0 + 1, R.wood[1]); } } }
@@ -445,8 +455,11 @@
     S(g, 64, 64, m => mpoly(m, [[24, 30], [40, 30], [40, 34], [24, 34]], 0), R.wood, { base: 2 }); for (let x = 26; x < 39; x += 3) g.set(x, 32, R.gold[4]); });
 
   /* ---------- 9. backgrounds 256×144 ---------- */
+  RIMC = null;
   const BW = 256, BH = 144;
-  const bg = (id, name, fn, note) => def("bg", id, name, () => { const g = new G(BW, BH); fn(g, rng(id.length * 97 + 3)); return g; }, note);
+  // per-biome grade: complementary for interiors, analogous for exteriors (shadow tint, light tint)
+  const GRADE = { bay_day: ["#1b3a5a", "#fff0c8", .25, .12], cathedral: ["#0c1e3a", "#ffb45a", .38, .2], waste: ["#10263a", "#ffb060", .35, .18], skyway: ["#1a0838", "#9ef6ff", .3, .14], factory: ["#08202a", "#ff6a4a", .36, .2], seal: ["#0a0a26", "#e6dcff", .25, .2] };
+  const bg = (id, name, fn, note) => def("bg", id, name, () => { const g = new G(BW, BH); fn(g, rng(id.length * 97 + 3)); const q = GRADE[id]; if (q) grade(g, q[0], q[1], q[2], q[3]); bloom(g, .8, 3, .3); return g; }, note);
   function gothic(g, r, x, base, w, h, ramp, b, lights) { // gothic building: buttresses, pinnacles, pointed windows
     const m = new M(BW, BH); mpoly(m, [[x, base], [x, base - h], [x + w / 2, base - h - w * .7], [x + w, base - h], [x + w, base]], 0);
     for (const px of [x - 1, x + w - 1]) mpoly(m, [[px, base], [px, base - h - 2], [px + 1, base - h - 10], [px + 2, base - h - 2], [px + 2, base]], 0);
@@ -514,6 +527,69 @@
     glow(g, 128, 122, 90, R.purple[3], .3); particles(g, r, 90, [60, 0, 196, 144], [R.purple[4], R.marble[4], R.gold[4]]);
   }, "光柱、三重法阵、七灯与悬浮的光尘");
 
+  /* ---------- 9b. flagship scenes at native 320×180 ---------- */
+  const SW = 320, SH = 180;
+  function arch(m, x, w, top, base, pw) { // pointed arch opening carved out of a wall mask: pillars + pointed head
+    mpoly(m, [[x, base], [x, top + w * .35], [x + w * .5, top], [x + w, top + w * .35], [x + w, base], [x + w + pw, base], [x + w + pw, top - 10], [x - pw, top - 10], [x - pw, base]], 0); }
+  function torch(g, x, y, big = 1) { line(g, x, y + 6, x + 3, y + 3, R.iron[2], 2); S(g, SW, SH, m => mpoly(m, [[x - 2, y], [x + 3, y], [x + 2, y + 4], [x - 1, y + 4]], 0), R.iron, { base: 2, rim: null });
+    S(g, SW, SH, m => mpoly(m, [[x - 2, y], [x, y - 7 * big], [x + 1, y - 4 * big], [x + 3, y - 6 * big], [x + 3, y]], 2), R.orange, { base: 3.2, rim: null }); S(g, SW, SH, m => mblob(m, x + .5, y - 1.5, 1.2, 2), R.gold, { base: 4, rim: null });
+    glow(g, x + .5, y - 3, 34 * big, R.orange[3], .55); glow(g, x + .5, y - 3, 10 * big, R.gold[4], .5); }
+  function chain(g, x, y0, y1, col) { for (let y = y0; y < y1; y++) g.set(x + Math.round(Math.sin(y * .08) * .6), y, (y % 3) ? col : mix(col, "#000", .5)); }
+  def("bg", "hall", "圣堂回廊（旗舰场景）", () => { const g = new G(SW, SH), r = rng(404);
+    // back wall: teal-shadowed masonry with vertical gradient
+    for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) { const row = y >> 3, off = row % 2 ? 6 : 0, mort = y % 8 === 7 || (x + off) % 12 === 11; g.set(x, y, mort ? "#0a1018" : pick(["#0b1420", "#12202e", "#1a2c3c", "#24394a"], 1.2 + (y / SH) * .9 + (y % 8 === 0 ? .6 : 0) + (r() - .5) * .3, x, y, .1)); }
+    // lancet windows with warm sky behind
+    for (const cx of [64, 160, 256]) { const wm = new M(SW, SH); mpoly(wm, [[cx - 9, 92], [cx - 9, 28], [cx, 12], [cx + 9, 28], [cx + 9, 92]], 1); fillCol(g, wm, (x, y) => { const lead = (x - cx + 9) % 6 === 0 || y % 10 === 0; return lead ? "#1a1010" : pick(["#ff8a3a", "#ffb054", "#ffd890", "#fff2c8"], 3 - (y - 12) / 80 * 2.4 - Math.abs(x - cx) / 12, x, y, .2); });
+      shaft(g, cx - 8, cx + 8, 92, SH, "#ffb860", .32); }
+    // far arcade (fogged)
+    { const m = new M(SW, SH); for (let x = -10; x < SW; x += 54) arch(m, x + 8, 38, 40, 132, 8); sculpt(g, m, R.stone, { base: 1.6, bev: 4, k: 1.4, rim: "#ffb860" }); fog(g, 0, SH, "#16283a", .35); }
+    // mid arcade: one wall with pointed openings carved out; windows show through
+    { const m = new M(SW, SH); for (let y = 6; y < 141; y++) for (let x = 0; x < SW; x++) m.put(x, y);
+      for (const cx of [64, 160, 256]) { const op = [[cx - 30, 141], [cx - 30, 64], [cx - 22, 44], [cx, 24], [cx + 22, 44], [cx + 30, 64], [cx + 30, 141]]; const p = chaikin(op, 2); for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) if (inPoly(x + .5, y + .5, p)) m.a[y * SW + x] = 0; }
+      sculpt(g, m, R.stone, { base: 2, bev: 6, k: 1.8, rim: "#ff9a4a" });
+      for (const px of [16, 112, 208, 304]) { for (let y = 70; y < 140; y += 12) groove(g, px - 12, y, px + 12, y, R.stone); S(g, SW, SH, mm => { mpoly(mm, [[px - 16, 60], [px + 16, 60], [px + 14, 66], [px - 14, 66]], 0); mpoly(mm, [[px - 15, 134], [px + 15, 134], [px + 16, 141], [px - 16, 141]], 0); }, R.stone, { base: 2.8, bev: 2, rim: null }); torch(g, px - 3, 96); }
+      for (let x = 0; x < SW; x++) { if (g.get(x, 8)) g.set(x, 8, R.gold[1]); if (g.get(x, 9)) g.set(x, 9, R.gold[2]); } }
+    for (const bx of [54, 246]) { const b = A.find(a => a.id === "banner"); if (b) g.blit(b.frames[0], bx, 40); }
+    for (const cx of [30, 132, 228, 300]) chain(g, cx, 0, 40 + (cx % 30), "#4a5468");
+    // floor: polished stone with reflections
+    for (let y = 140; y < SH; y++) for (let x = 0; x < SW; x++) { const t = (y - 140) / 40; g.set(x, y, pick(["#0a1018", "#142230", "#203446", "#2e4a5e"], 2.4 - t * 1.6 + ((x >> 4) + (y >> 3)) % 2 * .3, x, y, .1)); }
+    for (let x = 0; x < SW; x++) g.set(x, 140, "#3e6070"); for (const cx of [26, 88, 122, 184, 218, 280]) for (let y = 142; y < 170; y += 2) g.set(cx + (y % 4 ? 0 : 1), y, mix(g.get(cx, y) || "#000", "#ff9a4a", .5 - (y - 142) / 60));
+    // foreground pillars + ivy + kneeling figures
+    { const m = new M(SW, SH); mpoly(m, [[-4, SH], [-4, 0], [22, 0], [26, 20], [22, 24], [22, SH]], 0); mpoly(m, [[302, SH], [302, 24], [298, 20], [302, 0], [324, 0], [324, SH]], 0); sculpt(g, m, R.ink, { base: .8, bev: 4, k: 1.6, rim: "#5fd0e6" });
+      const iv = rng(9); for (const sx of [20, 303]) { let x = sx; for (let y = 0; y < 120; y++) { x += Math.round((iv() - .5) * 1.2); g.set(x, y, R.moss[2]); if (y % 4 === 0) { g.set(x - 1, y, R.moss[3]); g.set(x + 1, y + 1, R.moss[1]); } } } }
+    for (let i = 0; i < 6; i++) { const x = 126 + i * 14; S(g, SW, SH, m => { mpoly(m, [[x - 7, 174], [x - 6, 164], [x - 3, 158], [x + 2, 155], [x + 6, 160], [x + 7, 174]], 1); mpoly(m, [[x - 3, 158], [x + 1, 149], [x + 5, 152], [x + 4, 158]], 1); }, R.ink, { base: .7, bev: 2, k: 1.4, rim: "#ffb860" }); }
+    { const c = A.find(a => a.id === "chantdrone"); if (c) g.blit(c.frames[0], 146, 100); }
+    particles(g, r, 120, [40, 90, 290, 170], ["#ffd890", "#ffb860", "#fff2c8"]);
+    grade(g, "#08203a", "#ffb45a", .25, .18); bloom(g, .78, 4, .35); return g; }, "补色方案：青蓝阴影 + 暖橙火光 · 远中近三层拱廊");
+  def("bg", "dusk", "荒原黄昏（旗舰场景）", () => { const g = new G(SW, SH), r = rng(505);
+    skyRows(g, ["#1c1030", "#4a1a3e", "#9a2e44", "#e0603e", "#ffb060", "#ffe0a0"], 0, 120);
+    S(g, SW, SH, m => mblob(m, 104, 88, 24, 24), R.gold, { base: 3.9, bev: 14, rim: null }); glow(g, 104, 88, 110, "#ff8a40", .45); stars(g, r, 30, 40, ["#ffd8f0"]);
+    for (const [cx, cy, w] of [[40, 34, 40], [210, 22, 52], [300, 50, 30]]) S(g, SW, SH, m => { mblob(m, cx, cy, w, 4, 2.4); mblob(m, cx + w * .3, cy - 3, w * .5, 4); }, ["#3a1a3a", "#6a2a4a", "#a8445a", "#e0786a", "#ffb08a"], { base: 2.6, bev: 3, rim: "#ffd090" });
+    // far ruins (purple haze)
+    for (let x = -6; x < SW;) { const w = 14 + r() * 30 | 0; ruins(g, r, x, 150, w, 60 + r() * 40, "#4a2a4e"); x += w + (r() * 8 | 0); } fog(g, 40, 150, "#c45a5a", .4);
+    // mid: broken towers with a lit front face, a shadowed side face and window grids
+    for (const [x, w, h] of [[2, 26, 74], [44, 20, 52], [150, 24, 64], [300, 26, 80]]) { let top = 150 - h; const tops = []; for (let i = 0; i < w + 5; i++) { top += (r() - .5) * 3.4; tops.push(i < 3 || i > w + 1 ? top + 3 : top); }
+      for (let i = 0; i < w + 5; i++) for (let y = Math.floor(tops[i]); y < 152; y++) { const side = i >= w; g.set(x + i, y, side ? pick(["#1a0c14", "#2a141c", "#3a1c22"], 1 + (y - tops[i]) / 60, x + i, y, .1) : pick(["#2a1418", "#4a2422", "#6a3428", "#8a4a30"], 2.2 - (y - tops[i]) / 50 + (i < 2 ? .8 : 0), x + i, y, .1)); }
+      for (let y = Math.floor(150 - h + 10); y < 146; y += 8) for (let i = 3; i < w - 2; i += 5) { const lit = r() < .25; for (let j = 0; j < 4; j++) { g.set(x + i, y + j, lit ? (j ? "#ffb060" : "#ffd890") : "#140a10"); g.set(x + i + 1, y + j, lit ? "#e08040" : "#1c0e14"); } }
+      for (let k = 0; k < 3; k++) { const ii = 2 + (r() * (w - 4) | 0); line(g, x + ii, tops[ii], x + ii + (r() - .5) * 6, tops[ii] - 5 - r() * 7, "#8a5a40"); } }
+    fog(g, 60, 150, "#e0603e", .18);
+    // wrecked giant (original): a fallen helmeted head and an outstretched arm
+    { const hm = new M(SW, SH); mblob(hm, 214, 128, 30, 22, 2.6); mpoly(hm, [[196, 108], [204, 92], [210, 106]], 0); sculpt(g, hm, R.steel, { base: 1.7, bev: 8, k: 1.8, rim: "#ffb060" });
+      S(g, SW, SH, m2 => mpoly(m2, [[186, 120], [240, 114], [242, 126], [188, 132]], 1), R.ink, { base: 1.1, bev: 2, rim: null }); for (let x = 192; x < 238; x++) { const y = Math.round(121 + (x - 192) * -.12); g.set(x, y, Math.abs(x - 204) < 3 ? "#ff6a6a" : "#5a1424"); }
+      for (const [x0, y0, x1, y1] of [[194, 140, 236, 136], [226, 108, 232, 148], [200, 112, 206, 108]]) groove(g, x0, y0, x1, y1, R.steel); for (const [x, y] of [[198, 142], [214, 140], [230, 110], [236, 144]]) rivet(g, x, y, R.steel);
+      const am = new M(SW, SH); mline(am, 240, 140, 274, 124, 12); mline(am, 274, 124, 296, 146, 10); mblob(am, 300, 150, 9, 6, 2.4); sculpt(g, am, R.steel, { base: 1.5, bev: 5, k: 1.7, rim: "#ffb060" }); groove(g, 246, 136, 270, 126, R.steel);
+      for (let f = 0; f < 4; f++) line(g, 296 + f * 4, 152, 293 + f * 5, 160, R.steel[1], 2); for (const cx of [240, 252]) line(g, cx, 142, cx - 6, 156, "#2a2430", 1);
+      line(g, 214, 106, 226, 86, R.iron[2]); g.set(226, 85, "#ff6060"); }
+    // toppled neon billboard
+    { const m = new M(SW, SH); mpoly(m, [[120, 146], [158, 128], [166, 140], [128, 158]], 0); sculpt(g, m, R.ink, { base: 1.6, bev: 2, rim: null }); for (let i = 0; i < 30; i++) { const t = i / 30; const x = 124 + t * 38, y = 148 - t * 18; if (i % 4) { g.set(x, y, R.pink[3]); g.set(x, y + 3, R.cyan[3]); } } glow(g, 142, 142, 22, R.pink[3], .35); }
+    // ground + foreground rubble with teal rim
+    for (let y = 150; y < SH; y++) for (let x = 0; x < SW; x++) g.set(x, y, pick(["#140c12", "#24141a", "#3a2022", "#5a3024"], 2.6 - (y - 150) / 12 + Math.sin(x * .2) * .2, x, y, .1));
+    { const m = new M(SW, SH); mpoly(m, [[-6, 180], [-4, 156], [18, 148], [40, 154], [56, 166], [62, 180]], 2); mpoly(m, [[250, 180], [262, 160], [290, 150], [318, 156], [326, 180]], 2); mline(m, 30, 150, 46, 128, 3); mline(m, 292, 152, 312, 122, 3); sculpt(g, m, R.ink, { base: .7, bev: 3, k: 1.5, rim: "#5fd0e6" });
+      for (const sx of [8, 26, 270, 300]) for (let i = 0; i < 4; i++) { g.set(sx + i * 2, 150 - (i % 2) - (sx % 5), R.moss[2]); g.set(sx + i * 2, 149 - (i % 2) - (sx % 5), R.moss[3]); } }
+    for (let i = 0; i < 6; i++) { const x = 64 + i * 34 + r() * 8, y = 144 - r() * 6; g.set(x, y, "#ff5050"); g.set(x + 3, y, "#ff5050"); glow(g, x + 1, y, 6, "#ff4040", .7, true); }
+    particles(g, r, 140, [0, 20, SW, 176], ["#ffd0a0", "#ff9a60", "#b0a0a0"]);
+    grade(g, "#10283a", "#ffb060", .28, .16); bloom(g, .8, 4, .32); return g; }, "补色方案：暖橙天光 + 青色边缘光 · 倒下的巨型机体");
+
   /* ---------- 10. UI ---------- */
   function panel(w, h, style) { const g = new G(w, h), st = style === "synod" ? { b: R.gold, f: R.ink } : { b: R.wood, f: R.sand };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const e = Math.min(x, y, w - 1 - x, h - 1 - y); if ((x < 2 || x > w - 3) && (y < 2 || y > h - 3)) continue; if (e === 0) g.set(x, y, st.b[0]); else if (e === 1) g.set(x, y, st.b[x < w / 2 && y < h / 2 ? 3 : 2]); else if (e === 2) g.set(x, y, st.b[1]); else g.set(x, y, pick(st.f, style === "synod" ? 1.4 + (y < 6 ? .4 : 0) : 3 - y / h * .8, x, y)); }
@@ -534,8 +610,7 @@
 
   /* ---------- 11. mock-ups 320×180 ---------- */
   const get = id => A.find(a => a.id === id).frames;
-  def("mock", "shooter", "横版射击 · 荒原", () => { const g = new G(320, 180), b = get("waste")[0];
-    for (let y = 0; y < 180; y++) for (let x = 0; x < 320; x++) g.set(x, y, b.get(x * 256 / 320, y * 144 / 180));
+  def("mock", "shooter", "横版射击 · 荒原", () => { const g = new G(320, 180); g.blit(get("dusk")[0], 0, 0);
     for (let x = 0; x < 320; x += 16) { g.blit(get("rubble")[0], x, 152); g.blit(get("metal")[0], x, 166); }
     g.blit(get("tiepen")[0], 34, 104); g.blit(get("rogue")[0], 214, 98); g.blit(get("crawler")[0], 276, 130); g.blit(get("spam")[0], 176, 34);
     const bl = get("bullets")[0]; for (let i = 0; i < 4; i++) for (let y = 0; y < 9; y++) for (let x = 0; x < 9; x++) { const c = bl.get(x, y); if (c) g.set(104 + i * 24 + x, 131 + y, c); }
@@ -552,8 +627,7 @@
     [["canteen", 120, 30], ["datacenter", 186, 30], ["pigeontower", 248, 22], ["windmill", 18, 26]].forEach(([id, x, y]) => g.blit(get(id)[0], x, y));
     g.blit(get("cooker")[1], 172, 98); g.blit(get("crate")[0], 196, 104); g.blit(get("lamppost")[0], 144, 82); g.blit(get("pigeon")[1], 268, 6);
     g.blit(get("hotbar")[0], 106, 154); g.blit(panel(92, 22, "bay"), 4, 4); g.blit(bar(70, R.cyan, .6), 18, 10); g.blit(get("compute")[0], 4, 8); return g; }, "稻田、食堂、数据中心、信鸽塔与快捷栏");
-  def("mock", "dialogue", "剧情对话 · 圣堂", () => { const g = new G(320, 180), b = get("cathedral")[0];
-    for (let y = 0; y < 180; y++) for (let x = 0; x < 320; x++) g.set(x, y, b.get(x * 256 / 320, y * 144 / 180));
+  def("mock", "dialogue", "剧情对话 · 圣堂", () => { const g = new G(320, 180); g.blit(get("hall")[0], 0, 0);
     g.blit(panel(300, 54, "synod"), 10, 120); g.blit(panel(50, 50, "bay"), 16, 122); g.blit(get("storybook")[0], 27, 136);
     for (let i = 0; i < 3; i++) for (let x = 76; x < 76 + [200, 170, 120][i]; x++) if (x % 7) g.set(x, 140 + i * 9, R.rice[3]); for (let x = 76; x < 116; x++) g.set(x, 130, R.orange[3]);
     S(g, 320, 180, m => mblob(m, 300, 166, 2, 2), R.gold, { base: 3.6 }); return g; }, "头像位暂放剧情道具，角色立绘待定稿");

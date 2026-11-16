@@ -33,6 +33,7 @@ h2 small{font:500 12px var(--mono);color:var(--muted);margin-left:10px;letter-sp
 .stage canvas{image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;height:auto;display:block}
 .cap{padding:8px 12px 10px;font-size:13.5px}
 .cap b{display:block;font-weight:700}
+.cmode{font:500 13px var(--body);padding:4px 12px;border:1px solid var(--line);background:var(--panel);color:var(--text);cursor:pointer}.cmode[aria-pressed="true"]{background:var(--gold);color:#111;border-color:var(--gold)}
 .cap span{font:500 11px var(--mono);color:var(--muted)}
 .cap i{display:block;font-style:normal;color:var(--muted);font-size:12.5px;margin-top:2px}
 .pal{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
@@ -55,10 +56,10 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
 <nav aria-label="分类"><div class="wrap" id="nav"></div></nav>
 <div class="wrap">
   <header>
-    <div class="k">ART KIT · 像素美术套件 · v2</div>
+    <div class="k">ART KIT · 像素美术套件 · v3</div>
     <h1>零度圣歌 · 美术套件</h1>
-    <p>游戏里用到的美术元素：图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。角色立绘另行定稿，不在这一版里。</p>
-    <p>v2 改用平滑轮廓加距离场体积光照，减少了方框和椭圆感，补充了铆钉、刻线、饰边、灯笼、招牌等细节。氛围方向是暗调、高反差、强烈的彩色光源。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
+    <p>游戏里用到的美术元素：角色立绘、图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。角色立绘使用已获许可的原设像素化版本。</p>
+    <p>v3 参照《死亡细胞》公开的美术方法：饱和的中间调、室内用补色、室外用邻近色、暖光对冷影、敌人带冷色背光轮廓、硬边色阶不加抖动，背景做调色与泛光。全部元素仍为本作原创。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
     <div class="hero" id="hero"></div>
   </header>
   <div id="main"></div>
@@ -69,10 +70,10 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
       <div class="note"><b>描边</b><p>选择性描边：轮廓颜色取自相邻像素再压暗，受光面淡、背光面深，不使用一刀切的纯黑线。</p></div>
       <div class="note"><b>光</b><p>主光从左上方来。自发光物体（眼睛、屏幕、能量核心）向周围加色；场景里用雾和光柱拉出纵深。</p></div>
       <div class="note"><b>尺寸</b><p>图标 16×16，地块 16×16，建筑 64×64，敌人 22～66 像素高，Boss 60～72 像素，背景 256×144（游戏内 320×180 视口），UI 可九宫格拉伸。</p></div>
-      <div class="note"><b>版权</b><p>全部为本作原创，不使用任何社区立绘或公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
+      <div class="note"><b>版权</b><p>除角色立绘（原设 ZipZipPipe，已获许可）外，全部为本作原创，不使用公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
     </div>
   </section>
-  <footer>《零度圣歌》美术套件 v2 · 2026-11-16。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
+  <footer>《零度圣歌》美术套件 v3 · 2026-11-17。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
 </div>
 <dialog id="dlg"><button id="close" type="button">关闭</button><canvas id="zoom"></canvas><p id="zcap"></p></dialog>
 <script src="kit.js"></script>
@@ -80,7 +81,7 @@ footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px 
 const {A,R}=KIT;
 const CATS=[["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["mock","游戏画面样机","320×180",250,"340px"]];
 const CHARS=[["claude","克劳德"],["deepseek","深海 · 大肥鱼"],["gpt","白龙"],["gemini","双子"],["glm","智狐"],["kimi","月见"],["qwen","千问"],["grok","格洛克"],["wenxin","文墨"],["doubao","团子"]];
-document.getElementById("nav").innerHTML=CATS.map(c=>`<a href="#${c[0]}">${c[1]}</a>`).join("")+`<a href="#palette">调色板</a><a href="#rules">规范</a>`;
+document.getElementById("nav").innerHTML=`<a href="#char">角色立绘</a>`+CATS.map(c=>`<a href="#${c[0]}">${c[1]}</a>`).join("")+`<a href="#palette">调色板</a><a href="#rules">规范</a>`;
 
 function paint(cv,getter,w,h,s){cv.width=w*s;cv.height=h*s;const x=cv.getContext("2d");x.clearRect(0,0,cv.width,cv.height);for(let y=0;y<h;y++)for(let i=0;i<w;i++){const c=getter(i,y);if(c){x.fillStyle=c;x.fillRect(i*s,y*s,s,s)}}return cv}
 const anims=[];
@@ -107,6 +108,29 @@ for(const [cat,title,sub,box,min] of CATS){
   }
   sec.appendChild(grid);main.appendChild(sec);
 }
+// characters: licensed pixel portraits (ZipZipPipe), static 256px + animated 128px sheets
+(function(){
+  const CH=[["claude","克劳德"],["deepseek","深海 · 大肥鱼"],["gpt","白龙"],["gemini","双子"],["glm","智狐"],["kimi","月见"],["qwen","千问"],["grok","格洛克"],["wenxin","文墨"],["seed","豆包 Seed"],["minimax","海螺"],["mistral","法棍猫"]];
+  const sec=document.createElement("section");sec.id="char";
+  sec.innerHTML=`<h2>角色立绘<small>256 px 高 · 待机 / 走路动画 128 px</small></h2><p class="lead">角色原设：ZipZipPipe（胖次狐），已获作者许可使用；设定图补全来自 lmy414/ai-chan-sheets。点击可放大，切换按钮播放待机或走路。</p>
+  <div style="display:flex;gap:6px;margin-bottom:12px"><button type="button" id="cm-still" data-m="still" class="cmode" aria-pressed="true">静止</button><button type="button" id="cm-idle" data-m="idle" class="cmode" aria-pressed="false">待机</button><button type="button" id="cm-walk" data-m="walk" class="cmode" aria-pressed="false">走路</button></div>`;
+  const grid=document.createElement("div");grid.className="grid";grid.style.setProperty("--min","200px");grid.style.setProperty("--sh","300px");
+  const sheets=[];
+  for(const [id,name] of CH){
+    const t=document.createElement("div");t.className="tile";
+    const st=document.createElement("button");st.className="stage";st.type="button";st.id="cst-"+id;st.setAttribute("aria-label","放大 "+name);
+    const img=new Image();img.src=`chars/${id}_256.png`;img.alt=name;img.style.cssText="image-rendering:pixelated;height:256px;width:auto;max-width:100%";
+    const cv=document.createElement("canvas");cv.hidden=true;cv.style.cssText="image-rendering:pixelated;height:268px;width:auto";
+    st.append(img,cv);t.appendChild(st);t.insertAdjacentHTML("beforeend",`<div class="cap"><b>${name}</b><span>原设 ZipZipPipe · 256 px</span></div>`);grid.appendChild(t);
+    const sh=new Image();sh.src=`chars/${id}_sheet128.png`;const rec={id,img,cv,sh,fw:0,fh:0};sheets.push(rec);
+    fetch(`chars/${id}_sheet128.json`).then(r=>r.json()).then(j=>{rec.fw=j.frame_w;rec.fh=j.frame_h;cv.width=j.frame_w;cv.height=j.frame_h}).catch(()=>{});
+    st.addEventListener("click",()=>{dlg.showModal();const s=Math.max(1,Math.floor(Math.min(innerWidth*.9/img.naturalWidth,innerHeight*.8/img.naturalHeight)));zc.width=img.naturalWidth*s;zc.height=img.naturalHeight*s;const x=zc.getContext("2d");x.imageSmoothingEnabled=false;x.drawImage(img,0,0,zc.width,zc.height);document.getElementById("zcap").textContent=name+" · 原设 ZipZipPipe";});
+  }
+  sec.appendChild(grid);main.prepend(sec);
+  let mode="still",tk=0,timer=null;
+  document.querySelectorAll(".cmode").forEach(b=>b.addEventListener("click",()=>{mode=b.dataset.m;document.querySelectorAll(".cmode").forEach(o=>o.setAttribute("aria-pressed",String(o===b)));
+    sheets.forEach(s=>{s.img.hidden=mode!=="still";s.cv.hidden=mode==="still"});clearInterval(timer);if(mode!=="still"&&!still)timer=setInterval(()=>{tk++;sheets.forEach(s=>{if(!s.fw||!s.sh.complete)return;const x=s.cv.getContext("2d");x.clearRect(0,0,s.fw,s.fh);x.drawImage(s.sh,(tk%8)*s.fw,(mode==="walk"?1:0)*s.fh,s.fw,s.fh,0,0,s.fw,s.fh)})},mode==="walk"?85:125)}));
+})();
 // palette
 const ps=document.createElement("section");ps.id="palette";ps.innerHTML=`<h2>主调色板<small>22 条 × 5 阶</small></h2><p class="lead">每条色阶从暗到亮，做了色相偏移。所有元素只从这张表里取色。</p><div class="pal">${Object.entries(R).map(([k,v])=>`<div class="ramp"><div>${v.map(c=>`<i style="background:${c}" title="${c}"></i>`).join("")}</div><span>${k}</span></div>`).join("")}</div>`;
 main.appendChild(ps);

@@ -1,0 +1,24 @@
+{
+ "frame_w": 58,
+ "frame_h": 134,
+ "origin": "bottom-center",
+ "anims": {
+  "idle": {
+   "row": 0,
+   "frames": 8,
+   "fps": 8
+  },
+  "walk": {
+   "row": 1,
+   "frames": 8,
+   "fps": 12
+  }
+ },
+ "eyes": null,
+ "regions": {
+  "head_end": 27,
+  "waist": 55,
+  "knee": 97,
+  "cx": 33
+ }
+}
