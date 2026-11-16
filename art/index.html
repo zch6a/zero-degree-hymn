@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>零度圣歌美术套件</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: art-kit catalogue. Dark ground so emissive pixels read; each category is a band of tiles on a checker "transparent" stage. Single dark look by choice. */
+:root{--ink:#0c0b14;--panel:#16142a;--line:#2b2848;--text:#ece8dd;--muted:#a3a0b8;--gold:#e8b85e;--display:"Noto Serif SC",serif;--body:"Noto Sans SC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.7}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+a{color:var(--gold)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:color-mix(in oklab,var(--ink) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav a{flex:none;text-decoration:none;color:var(--muted);font-size:13px;padding:4px 10px}
+nav a:hover,nav a:focus-visible{color:var(--gold);outline:1px solid var(--line)}
+header{padding-block:36px 10px}
+.k{font:700 12px var(--mono);letter-spacing:.2em;color:var(--gold)}
+h1{font:900 clamp(36px,7vw,72px)/1.05 var(--display);margin:6px 0 10px;text-wrap:balance}
+header p{max-width:70ch;color:var(--muted);margin:0 0 6px}
+.hero canvas{width:100%;height:auto;border:1px solid var(--line);image-rendering:pixelated;display:block}
+section{padding-block:40px 0;scroll-margin-top:52px}
+h2{font:900 28px var(--display);margin:0 0 4px}
+h2 small{font:500 12px var(--mono);color:var(--muted);margin-left:10px;letter-spacing:.06em}
+.lead{color:var(--muted);margin:0 0 16px;max-width:72ch}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,var(--min,180px)),1fr))}
+.tile{background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.stage{background:conic-gradient(#1e1c34 25%,#171528 0 50%,#1e1c34 0 75%,#171528 0) 0 0/16px 16px;display:flex;align-items:center;justify-content:center;padding:14px;min-height:var(--sh,120px);overflow:hidden;border:0;cursor:zoom-in;width:100%}
+.stage:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.stage canvas{image-rendering:pixelated;image-rendering:crisp-edges;max-width:100%;height:auto;display:block}
+.cap{padding:8px 12px 10px;font-size:13.5px}
+.cap b{display:block;font-weight:700}
+.cap span{font:500 11px var(--mono);color:var(--muted)}
+.cap i{display:block;font-style:normal;color:var(--muted);font-size:12.5px;margin-top:2px}
+.pal{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr))}
+.ramp{display:flex;flex-direction:column;gap:3px}
+.ramp div{display:flex;height:22px}
+.ramp div i{flex:1}
+.ramp span{font:500 11px var(--mono);color:var(--muted)}
+.notes{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.note{background:var(--panel);border:1px solid var(--line);padding:14px 16px}
+.note b{font-family:var(--display);font-size:17px;display:block;margin-bottom:4px;color:var(--gold)}
+.note p{margin:0;font-size:14px}
+dialog{border:0;padding:0;background:transparent;max-width:96vw;max-height:94vh}
+dialog::backdrop{background:rgba(5,4,10,.9)}
+dialog canvas{image-rendering:pixelated;max-width:96vw;max-height:84vh;width:auto;height:auto;display:block;background:#14121f}
+dialog p{color:#ece8dd;text-align:center;margin:8px 0 0;font-size:14px}
+dialog button{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));font:500 14px var(--body);padding:6px 14px;border:0;background:#ece8dd;color:#111;cursor:pointer}
+footer{padding-block:50px 60px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);margin-top:50px}
+</style>
+<body>
+<nav aria-label="分类"><div class="wrap" id="nav"></div></nav>
+<div class="wrap">
+  <header>
+    <div class="k">ART KIT · 像素美术套件 · v1</div>
+    <h1>零度圣歌 · 美术套件</h1>
+    <p>游戏里用到的全部美术元素：角色、图标、武器、特效、敌人、机甲、地块、道具、建筑、关卡背景、UI 组件和游戏画面样机。所有元素都由代码逐像素生成，共用一套主调色板。</p>
+    <p>氛围方向是暗调、高反差、强烈的彩色光源：剪影、雾、光柱、自发光和边缘光。点击任意一张可放大查看。<a href="../">← 返回设定集</a></p>
+    <div class="hero" id="hero"></div>
+  </header>
+  <div id="main"></div>
+  <section id="rules"><h2>美术规范<small>RULES</small></h2>
+    <div class="notes">
+      <div class="note"><b>主调色板</b><p>22 条五阶色阶，每条从暗到亮做色相偏移：暗部偏蓝紫，亮部偏暖。所有元素只从这张表里取色。</p></div>
+      <div class="note"><b>抖动</b><p>色阶之间用 4×4 Bayer 有序抖动过渡，只用在球面、天空和大块渐变上，小物件尽量用纯色块。</p></div>
+      <div class="note"><b>描边</b><p>选择性描边：轮廓颜色取自相邻像素再压暗，受光面淡、背光面深，不使用一刀切的纯黑线。</p></div>
+      <div class="note"><b>光</b><p>主光从左上方来。自发光物体（眼睛、屏幕、能量核心）向周围加色；场景里用雾和光柱拉出纵深。</p></div>
+      <div class="note"><b>尺寸</b><p>图标 16×16，地块 16×16，角色立绘 64×96，敌人 22～66 像素高，Boss 60～72 像素，背景 256×144（游戏内 320×180 视口），UI 可九宫格拉伸。</p></div>
+      <div class="note"><b>版权</b><p>全部为本作原创。角色造型是我们自己的设定，不使用任何社区立绘或公司 logo；圣会徽记是被锁链缠住的日轮。</p></div>
+    </div>
+  </section>
+  <footer>《零度圣歌》美术套件 v1 · 2026-11-16。PNG 原图在项目仓库 art/png/ 目录。本作为同人题材的原创作品，与原型涉及的公司无关，也未获其授权或背书。</footer>
+</div>
+<dialog id="dlg"><button id="close" type="button">关闭</button><canvas id="zoom"></canvas><p id="zcap"></p></dialog>
+<script src="chars.js"></script>
+<script src="kit.js"></script>
+<script>
+const {A,R}=KIT;
+const CATS=[["char","角色立绘","64×96 · 10 位主角 · 原创造型",210,"190px"],["icon","道具图标","16×16 · AI 术语资源",96,"120px"],["weapon","武器","横版射击用",110,"170px"],["vfx","特效","逐帧动画",110,"140px"],["enemy","敌人与 Boss","圣会、荒原与回收站",190,"190px"],["mech","机甲与载具","可驾驶",150,"220px"],["tile","地块","16×16 · 可无缝平铺",120,"130px"],["prop","道具","场景摆件",130,"140px"],["building","建筑","白饭湾经营",210,"190px"],["bg","关卡背景","256×144 · 视差层",230,"300px"],["ui","UI 套件","面板、按钮、数值条",120,"200px"],["mock","游戏画面样机","320×180",250,"340px"]];
+const CHARS=[["claude","克劳德"],["deepseek","深海 · 大肥鱼"],["gpt","白龙"],["gemini","双子"],["glm","智狐"],["kimi","月见"],["qwen","千问"],["grok","格洛克"],["wenxin","文墨"],["doubao","团子"]];
+document.getElementById("nav").innerHTML=CATS.map(c=>`<a href="#${c[0]}">${c[1]}</a>`).join("")+`<a href="#palette">调色板</a><a href="#rules">规范</a>`;
+
+function paint(cv,getter,w,h,s){cv.width=w*s;cv.height=h*s;const x=cv.getContext("2d");x.clearRect(0,0,cv.width,cv.height);for(let y=0;y<h;y++)for(let i=0;i<w;i++){const c=getter(i,y);if(c){x.fillStyle=c;x.fillRect(i*s,y*s,s,s)}}return cv}
+const anims=[];
+function scaleFor(w,h,box){return Math.max(1,Math.min(8,Math.floor(Math.min(box*1.4/w,box/h))))}
+const main=document.getElementById("main");
+for(const [cat,title,sub,box,min] of CATS){
+  const sec=document.createElement("section");sec.id=cat;
+  sec.innerHTML=`<h2>${title}<small>${sub}</small></h2>`;
+  const grid=document.createElement("div");grid.className="grid";grid.style.setProperty("--min",min);grid.style.setProperty("--sh",box+"px");
+  const items=cat==="char"?CHARS.map(([id,n])=>({id,name:n,char:1,w:64,h:96})):A.filter(a=>a.cat===cat);
+  for(const a of items){
+    const w=a.char?64:a.frames[0].w,h=a.char?96:a.frames[0].h,s=a.char?2:scaleFor(w,h,box-28);
+    const t=document.createElement("div");t.className="tile";
+    const st=document.createElement("button");st.className="stage";st.type="button";st.id="st-"+a.id;st.setAttribute("aria-label","放大 "+a.name);
+    const cv=document.createElement("canvas");cv.setAttribute("role","img");cv.setAttribute("aria-label",a.name);st.appendChild(cv);t.appendChild(st);
+    if(a.char){const g=AIG.grid(a.id);paint(cv,(x,y)=>g[y][x],64,96,s)}
+    else{paint(cv,(x,y)=>a.frames[0].get(x,y),w,h,s);if(a.frames.length>1)anims.push([cv,a,s])}
+    if(cat==="tile"){ // preview as a 3×3 tiled patch
+      const f=a.frames[0];paint(cv,(x,y)=>f.get(x%f.w,y%f.h),f.w*3,f.h*(f.h>16?1:3),Math.max(1,Math.floor(s/2)));if(a.frames.length>1)anims[anims.length-1]=[cv,a,Math.max(1,Math.floor(s/2)),"tile"];}
+    const fr=a.char?"":a.frames.length>1?` · ${a.frames.length} 帧`:"";
+    t.insertAdjacentHTML("beforeend",`<div class="cap"><b>${a.name}</b><span>${w}×${h}${fr}</span>${a.note?`<i>${a.note}</i>`:""}</div>`);
+    st.addEventListener("click",()=>openZoom(a,w,h));
+    grid.appendChild(t);
+  }
+  sec.appendChild(grid);main.appendChild(sec);
+}
+// palette
+const ps=document.createElement("section");ps.id="palette";ps.innerHTML=`<h2>主调色板<small>22 条 × 5 阶</small></h2><p class="lead">每条色阶从暗到亮，做了色相偏移。所有元素只从这张表里取色。</p><div class="pal">${Object.entries(R).map(([k,v])=>`<div class="ramp"><div>${v.map(c=>`<i style="background:${c}" title="${c}"></i>`).join("")}</div><span>${k}</span></div>`).join("")}</div>`;
+main.appendChild(ps);
+// hero: shooter mock-up
+(function(){const m=A.find(a=>a.id==="shooter").frames[0];const cv=document.createElement("canvas");paint(cv,(x,y)=>m.get(x,y),320,180,3);cv.setAttribute("role","img");cv.setAttribute("aria-label","横版射击画面样机");document.getElementById("hero").appendChild(cv)})();
+// animation loop
+let still=false;try{still=matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){}
+let tick=0;if(!still)setInterval(()=>{tick++;for(const [cv,a,s,mode] of anims){const f=a.frames[tick%a.frames.length];if(mode==="tile")paint(cv,(x,y)=>f.get(x%f.w,y%f.h),f.w*3,f.h*(f.h>16?1:3),s);else paint(cv,(x,y)=>f.get(x,y),f.w,f.h,s)}},180);
+// zoom
+const dlg=document.getElementById("dlg"),zc=document.getElementById("zoom");let zt=null;
+function openZoom(a,w,h){const s=Math.max(2,Math.floor(Math.min(innerWidth*.94/w,innerHeight*.8/h)));clearInterval(zt);
+  if(a.char){const g=AIG.grid(a.id);paint(zc,(x,y)=>g[y][x],w,h,s)}else{let k=0;const draw=()=>{const f=a.frames[k++%a.frames.length];paint(zc,(x,y)=>f.get(x,y),w,h,s)};draw();if(a.frames.length>1&&!still)zt=setInterval(draw,180)}
+  document.getElementById("zcap").textContent=`${a.name} · ${w}×${h}`;dlg.showModal()}
+document.getElementById("close").addEventListener("click",()=>dlg.close());dlg.addEventListener("click",e=>{if(e.target===dlg)dlg.close()});dlg.addEventListener("close",()=>clearInterval(zt));
+</script>
+</body>
+</html>

@@ -440,7 +440,7 @@ function charCard(x,minor){
 /* ================= render ================= */
 addEventListener("load",()=>{if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView()}});
 const NAV=[["about","设定集"],["world","世界观"],["motifs","意象"],["cast","人物"],["fall","堕落曲线"],["plot","主线"],["twists","反转"],["systems","系统"],["bay","经营"],["combat","射击"],["endings","结局"],["themes","主题"]];
-H("navw",NAV.map(([a,t])=>`<a href="#${a}">${t}</a>`).join(""));
+H("navw",NAV.map(([a,t])=>`<a href="#${a}">${t}</a>`).join("")+`<a href="art/" style="color:var(--gold)">美术套件 →</a>`);
 
 /* cover: night cathedral (left) meeting sunny bay (right) */
 (function(){const r=rng(7);const g1=uid("g"),g2=uid("g"),m=uid("m");
